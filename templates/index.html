@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clasificador de Residuos</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="tag">ResNet50 · v1.0</div>
+    <h1>Eco<br><span>Lover</span></h1>
+    <p class="subtitle">// arrastra imágenes · analiza en lote · exporta resultados</p>
+  </header>
+
+  <div class="info-bar">
+    <span class="accent-dot"></span>
+    <span>
+      Modelo: <strong>{{ model_name }}</strong>
+      &nbsp;|&nbsp; {{ labels|length }} categorías
+      &nbsp;|&nbsp; {{ labels|join(' · ') }}
+      &nbsp;|&nbsp; Sesión: <strong>{{ user }}</strong>
+    </span>
+    <a class="btn btn-ghost btn-logout" href="{{ url_for('logout') }}">Cerrar sesión</a>
+  </div>
+
+  <!-- Camera -->
+  <div class="camera-area" id="camera-area">
+    <div class="camera-header">
+      <h3>Captura con cámara</h3>
+      <div class="camera-actions">
+        <button class="btn btn-primary" onclick="startCamera()">Abrir cámara</button>
+        <button class="btn btn-ghost" id="btn-stop-camera" onclick="stopCamera()" disabled>Cerrar</button>
+      </div>
+    </div>
+    <div class="camera-body">
+      <video id="camera-video" autoplay playsinline muted></video>
+      <canvas id="camera-canvas" style="display:none"></canvas>
+    </div>
+    <div class="camera-footer">
+      <button class="btn btn-primary" id="btn-capture" onclick="capturePhoto()" disabled>Tomar foto</button>
+      <span class="camera-hint">Permite el acceso a la cámara en el navegador.</span>
+    </div>
+  </div>
+
+  <!-- Drop Zone -->
+  <div class="drop-zone" id="drop-zone">
+    <span class="drop-icon">♻️</span>
+    <h2>Arrastra tus imágenes aquí</h2>
+    <p>
+      Suelta archivos JPG, PNG, WEBP
+      &nbsp;·&nbsp; o
+      <span onclick="document.getElementById('file-input').click()">busca en tu equipo</span>
+    </p>
+    <input type="file" id="file-input" multiple accept="image/*">
+  </div>
+
+  <!-- Batch header -->
+  <div class="batch-header" id="batch-header" style="display:none">
+    <h3>Cola de imágenes &nbsp;<span id="img-count" style="color:var(--accent)">0</span></h3>
+    <button class="btn btn-ghost" onclick="clearAll()">Limpiar todo</button>
+  </div>
+
+  <!-- Image Grid -->
+  <div class="image-grid" id="image-grid"></div>
+
+  <!-- Analyze area -->
+  <div class="analyze-area" id="analyze-area" style="display:none">
+    <button class="btn-analyze" id="btn-analyze" onclick="analyzeAll()">
+      ▶ Analizar imágenes
+    </button>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-wrap" id="progress-wrap">
+    <div class="progress-label">
+      <span id="progress-text">Analizando...</span>
+      <span id="progress-pct">0%</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progress-fill"></div>
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div class="summary" id="summary">
+    <h3>// Resumen de clasificación</h3>
+    <div class="summary-grid" id="summary-grid"></div>
+  </div>
+
+  <!-- Export -->
+  <div class="export-area" id="export-area">
+    <button class="btn btn-primary" onclick="exportCSV()">↓ Exportar CSV</button>
+    <button class="btn btn-ghost"   onclick="exportJSON()">↓ Exportar JSON</button>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ingreso · Clasificador de Residuos</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="tag">Acceso</div>
+    <h1>Eco<br><span>Lover</span></h1>
+    <p class="subtitle">// inicia sesión para usar el clasificador</p>
+  </header>
+
+  <div class="login-card">
+    <h2>Iniciar sesión</h2>
+    {% if error %}
+      <div class="login-error">{{ error }}</div>
+    {% endif %}
+    <form method="post" class="login-form">
+      <label>
+        Usuario
+        <input type="text" name="username" required autocomplete="username">
+      </label>
+      <label>
+        Contraseña
+        <input type="password" name="password" required autocomplete="current-password">
+      </label>
+      <button class="btn btn-primary" type="submit">Entrar</button>
+    </form>
+    <div class="login-links">
+      <span>¿No tienes cuenta?</span>
+      <a href="{{ url_for('register') }}">Regístrate</a>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
