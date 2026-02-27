@@ -1,11 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap');
-
 :root {
-  --bg: #e2e2e2;
+  --bg: #ffffff;
   --surface: #111111;
   --border: #222222;
   --accent: #ec7d21;
-  --accent2: #00ffc8;
+  --accent2: #05102f;
   --text: #000000;
   --muted: #555;
   --card-bg: #d1cfcf;
@@ -16,12 +14,11 @@
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: 'Syne', sans-serif;
+  font-family: 'area-normal', sans-serif;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 40px 20px;
 }
 
 /* Background grid */
@@ -42,23 +39,26 @@ body::before {
   z-index: 1;
   width: 100%;
   max-width: 900px;
+  padding: 10px 20px;
 }
 
 header {
   text-align: center;
-  margin-bottom: 48px;
+  margin-bottom: 18px;
+  padding: 10px 40px;   /* lo centra */
+  width:auto;
+  display: flex;
+  justify-content:flex-end;
+  align-items: center;
+  width: 70%;
+  box-shadow: #bababa 0px 4px 8px -2px;
 }
 
 .tag {
   display: inline-block;
-  font-family: 'Space Mono', monospace;
-  font-size: 11px;
-  letter-spacing: 3px;
-  text-transform: uppercase;
+  font-size: 16px;
   color: var(--accent);
-  border: 1px solid var(--accent);
   padding: 4px 12px;
-  margin-bottom: 16px;
 }
 
 h1 {
@@ -73,10 +73,15 @@ h1 span { color: var(--accent); }
 .subtitle {
   margin-top: 12px;
   color: var(--muted);
-  font-family: 'Space Mono', monospace;
+  font-family: 'area-normal', sans-serif;  
   font-size: 13px;
 }
-
+.nav-container {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+  flex-direction: column;
+}
 /* Drop Zone */
 .drop-zone {
   border: 2px dashed var(--border);
@@ -89,7 +94,11 @@ h1 span { color: var(--accent); }
   overflow: hidden;
   background: var(--card-bg);
 }
-
+.model-info{
+  font-family: 'area-normal', sans-serif;  font-size: 11px;
+  color: var(--muted);
+  margin-top: 12px;
+}
 .drop-zone::before {
   content: '';
   position: absolute;
@@ -125,8 +134,7 @@ h1 span { color: var(--accent); }
 
 .drop-zone p {
   color: var(--muted);
-  font-family: 'Space Mono', monospace;
-  font-size: 12px;
+  font-family: 'area-normal', sans-serif;  font-size: 12px;
 }
 
 .drop-zone p span {
@@ -148,15 +156,14 @@ h1 span { color: var(--accent); }
 
 .batch-header h3 {
   font-size: 14px;
-  font-family: 'Space Mono', monospace;
+  font-family: 'area-normal', sans-serif;
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 2px;
 }
 
 .btn {
-  font-family: 'Space Mono', monospace;
-  font-size: 11px;
+  font-family: 'area-normal', sans-serif;  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 2px;
   padding: 8px 20px;
@@ -164,6 +171,9 @@ h1 span { color: var(--accent); }
   background: transparent;
   cursor: pointer;
   transition: all 0.15s;
+  border-radius: 25px;
+  max-width: fit-content;
+  font-weight: bold;
 }
 
 .btn-primary { border-color: var(--accent); color: var(--accent); }
@@ -211,8 +221,7 @@ h1 span { color: var(--accent); }
 .image-card-info { padding: 10px 12px; }
 
 .image-name {
-  font-family: 'Space Mono', monospace;
-  font-size: 10px;
+  font-family: 'area-normal', sans-serif;  font-size: 10px;
   color: var(--muted);
   white-space: nowrap;
   overflow: hidden;
@@ -227,8 +236,7 @@ h1 span { color: var(--accent); }
 }
 
 .image-confidence {
-  font-family: 'Space Mono', monospace;
-  font-size: 10px;
+  font-family: 'area-normal', sans-serif;  font-size: 10px;
   color: var(--muted);
 }
 
@@ -266,8 +274,7 @@ h1 span { color: var(--accent); }
 }
 
 .btn-analyze {
-  font-family: 'Space Mono', monospace;
-  font-size: 12px;
+  font-family: 'area-normal', sans-serif;  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 3px;
   padding: 14px 40px;
@@ -286,8 +293,7 @@ h1 span { color: var(--accent); }
 .progress-wrap { display: none; margin-bottom: 32px; }
 
 .progress-label {
-  font-family: 'Space Mono', monospace;
-  font-size: 11px;
+  font-family: 'area-normal', sans-serif;  font-size: 11px;
   color: var(--muted);
   margin-bottom: 8px;
   display: flex;
@@ -319,8 +325,7 @@ h1 span { color: var(--accent); }
 }
 
 .summary h3 {
-  font-family: 'Space Mono', monospace;
-  font-size: 11px;
+  font-family: 'area-normal', sans-serif;  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 3px;
   color: var(--muted);
@@ -351,8 +356,7 @@ h1 span { color: var(--accent); }
 }
 
 .summary-label {
-  font-family: 'Space Mono', monospace;
-  font-size: 10px;
+  font-family: 'area-normal', sans-serif;  font-size: 10px;
   color: var(--muted);
   margin-top: 6px;
   text-transform: uppercase;
@@ -391,8 +395,7 @@ h1 span { color: var(--accent); }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .spinner-label {
-  font-family: 'Space Mono', monospace;
-  font-size: 10px;
+  font-family: 'area-normal', sans-serif;  font-size: 10px;
   color: var(--accent);
   text-transform: uppercase;
   letter-spacing: 2px;
@@ -407,8 +410,7 @@ h1 span { color: var(--accent); }
   display: flex;
   align-items: center;
   gap: 12px;
-  font-family: 'Space Mono', monospace;
-  font-size: 11px;
+  font-family: 'area-normal', sans-serif;  font-size: 11px;
   color: var(--accent);
 }
 
@@ -467,8 +469,7 @@ h1 span { color: var(--accent); }
 }
 
 .camera-header h3 {
-  font-family: 'Space Mono', monospace;
-  font-size: 12px;
+  font-family: 'area-normal', sans-serif;  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 2px;
   color: var(--muted);
@@ -502,72 +503,76 @@ h1 span { color: var(--accent); }
 }
 
 .camera-hint {
-  font-family: 'Space Mono', monospace;
-  font-size: 11px;
+  font-family: 'area-normal', sans-serif;  font-size: 11px;
   color: var(--muted);
 }
 
 .btn-logout {
   margin-left: auto;
   text-decoration: none;
+  font-size: 6px;
+  padding: 4px 10px;
 }
 
 /* Login */
 .login-card {
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 4px;
   padding: 28px;
   max-width: 420px;
   margin: 0 auto;
+  margin-top: 100px;
 }
 
 .login-card h2 {
-  font-size: 1.1rem;
+  font-size: 0.9rem;
   margin-bottom: 16px;
+  color:var(--muted);
+  text-align: center;
+  font-weight: normal;
 }
 
 .login-form {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  align-items: center;
+  gap: 24px;
 }
 
 .login-form label {
-  font-family: 'Space Mono', monospace;
-  font-size: 12px;
+  font-family: 'area-normal', sans-serif;  font-size: 12px;
   color: var(--muted);
   display: flex;
   flex-direction: column;
   gap: 6px;
+  width: 100%;
 }
 
 .login-form input {
-  background: #fff;
+  color: #f5f5dc;
   border: 1px solid var(--border);
   padding: 10px 12px;
-  font-family: 'Space Mono', monospace;
-  font-size: 12px;
+  font-family: 'area-normal', sans-serif;  font-size: 12px;
+  border-radius: 20px ;
+  background-color: var(--accent2);
+  min-width: 100%;
 }
 
 .login-error {
   background: rgba(255, 68, 68, 0.12);
   border: 1px solid rgba(255, 68, 68, 0.35);
   color: #ff4444;
-  font-family: 'Space Mono', monospace;
-  font-size: 12px;
+  font-family: 'area-normal', sans-serif;  font-size: 12px;
   padding: 10px 12px;
   margin-bottom: 12px;
 }
 
 .login-links {
   margin-top: 12px;
-  font-family: 'Space Mono', monospace;
-  font-size: 11px;
+  font-family: 'area-normal', sans-serif;  font-size: 11px;
   color: var(--muted);
   display: flex;
   gap: 8px;
   align-items: center;
+  flex-direction: column;
 }
 
 .login-links a {
@@ -588,4 +593,32 @@ h1 span { color: var(--accent); }
   .info-bar {
     flex-wrap: wrap;
   }
+  header{
+    width: 100%;
+    padding: 10px 20px;
+
+  }
+}
+
+.header-logo img {
+  width: 160px;      /* ajusta el tamaño aquí */
+  height: auto;      /* mantiene proporción */
+  display: block;
+  margin: 0 auto;   /* lo centra */
+  
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+footer {
+  width: 100%;
+  background: var(--card-bg);
+  border-top: 1px solid var(--border);
+  padding: 20px;
+  text-align: center;
+  font-family: 'area-normal', sans-serif;  font-size: 11px;
+  color: var(--muted);
 }

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clasificador de Residuos</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+
+<body>
+    <header>
+        ecolover
+        <a class="btn btn-ghost btn-logout" href="{{ url_for('logout') }}">Cerrar sesión</a>
+    </header>
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+    <!-- Toast Notification -->
+    <div id="toast-notification" class="toast-notification hidden"></div>
+    <footer class="main-footer">
+        <div class="footer-content">
+            <p>&copy; Ecolovers.</p>
+            <p>Developed by: Fabian Solano</p>
+
+        </div>
+    </footer>
+</body>
+
+
+</html>

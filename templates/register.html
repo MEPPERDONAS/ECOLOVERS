@@ -9,14 +9,12 @@
 <body>
 
 <div class="container">
-  <header>
-    <div class="tag">Registro</div>
-    <h1>Eco<br><span>Lover</span></h1>
-    <p class="subtitle">// crea tu cuenta para usar el clasificador</p>
-  </header>
+  <div class="header-logo">
+      <img src="{{ url_for('static', filename='LOGO.jpg') }}" alt="ecoloverlogo">
+
+  </div>
 
   <div class="login-card">
-    <h2>Crear cuenta</h2>
     {% if error %}
       <div class="login-error">{{ error }}</div>
     {% endif %}

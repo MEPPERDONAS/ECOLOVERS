@@ -1,48 +1,25 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Clasificador de Residuos</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-</head>
+{% extends "base.html" %}
+
+{% block title %}Home - Empire #185{% endblock %}
+
+
+{% block content %}
+
 <body>
 
 <div class="container">
-  <header>
-    <div class="tag">ResNet50 · v1.0</div>
-    <h1>Eco<br><span>Lover</span></h1>
-    <p class="subtitle">// arrastra imágenes · analiza en lote · exporta resultados</p>
-  </header>
+<div class="header-logo">
+    <img src="{{ url_for('static', filename='LOGO.jpg') }}" alt="ecoloverlogo">
 
-  <div class="info-bar">
-    <span class="accent-dot"></span>
-    <span>
-      Modelo: <strong>{{ model_name }}</strong>
-      &nbsp;|&nbsp; {{ labels|length }} categorías
-      &nbsp;|&nbsp; {{ labels|join(' · ') }}
-      &nbsp;|&nbsp; Sesión: <strong>{{ user }}</strong>
-    </span>
-    <a class="btn btn-ghost btn-logout" href="{{ url_for('logout') }}">Cerrar sesión</a>
-  </div>
+</div>
+  <div class="nav-container">
+    <div class="user-info">
+      <span> Hola, <strong>{{ user }}</strong></span>
 
-  <!-- Camera -->
-  <div class="camera-area" id="camera-area">
-    <div class="camera-header">
-      <h3>Captura con cámara</h3>
-      <div class="camera-actions">
-        <button class="btn btn-primary" onclick="startCamera()">Abrir cámara</button>
-        <button class="btn btn-ghost" id="btn-stop-camera" onclick="stopCamera()" disabled>Cerrar</button>
-      </div>
     </div>
-    <div class="camera-body">
-      <video id="camera-video" autoplay playsinline muted></video>
-      <canvas id="camera-canvas" style="display:none"></canvas>
-    </div>
-    <div class="camera-footer">
-      <button class="btn btn-primary" id="btn-capture" onclick="capturePhoto()" disabled>Tomar foto</button>
-      <span class="camera-hint">Permite el acceso a la cámara en el navegador.</span>
-    </div>
+      <span class="model-info"><span class="accent-dot"></span> {{ labels|join(' · ') }}
+      </span>
+
   </div>
 
   <!-- Drop Zone -->
@@ -100,3 +77,4 @@
 <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
 </html>
+{% endblock %}

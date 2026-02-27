@@ -7,7 +7,7 @@ from functools import wraps
 import numpy as np
 from flask import Flask, request, jsonify, render_template, redirect, url_for, session
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_cors import CORS  # Asegúrate de tenerlo instalado: pip install flask-cors
+from flask_cors import CORS
 import tensorflow as tf
 from PIL import Image
 # Importamos el preprocesador oficial de ResNet50
@@ -109,8 +109,6 @@ def predict():
     try:
         img = Image.open(io.BytesIO(img_bytes))
         log.debug(f"    Modo original: {img.mode} | Tamaño: {img.size}")
-        
-        # Convertir a RGB y redimensionar
         img = img.convert('RGB')
         img = img.resize(IMG_SIZE)
         

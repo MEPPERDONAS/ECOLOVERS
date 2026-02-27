@@ -9,31 +9,30 @@
 <body>
 
 <div class="container">
-  <header>
-    <div class="tag">Acceso</div>
-    <h1>Eco<br><span>Lover</span></h1>
-    <p class="subtitle">// inicia sesión para usar el clasificador</p>
-  </header>
+  <div class="header-logo">
+      <img src="{{ url_for('static', filename='LOGO.jpg') }}" alt="ecoloverlogo">
+
+  </div>
 
   <div class="login-card">
-    <h2>Iniciar sesión</h2>
+    <h2>¡transforma tus acciones!</h2>
     {% if error %}
       <div class="login-error">{{ error }}</div>
     {% endif %}
     <form method="post" class="login-form">
       <label>
-        Usuario
-        <input type="text" name="username" required autocomplete="username">
+        
+        <input type="text" placeholder="Usuario" name="username" required autocomplete="username">
       </label>
       <label>
-        Contraseña
-        <input type="password" name="password" required autocomplete="current-password">
+        
+        <input type="password" placeholder="Contraseña" name="password" required autocomplete="current-password">
       </label>
       <button class="btn btn-primary" type="submit">Entrar</button>
     </form>
     <div class="login-links">
-      <span>¿No tienes cuenta?</span>
-      <a href="{{ url_for('register') }}">Regístrate</a>
+      <span>¿Nuevo en reciclolovers?</span>
+      <a href="{{ url_for('register') }}">Crear cuenta</a>
     </div>
   </div>
 </div>
