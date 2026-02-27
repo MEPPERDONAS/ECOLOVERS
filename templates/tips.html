@@ -1,0 +1,29 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Tips por Categorias{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="guide-header">
+    <div>
+      <h2>Tips de Reciclaje por Categorias</h2>
+      <p class="guide-bin">Buenas practicas para separar mejor cada tipo de residuo.</p>
+    </div>
+    <a class="btn btn-ghost" href="{{ url_for('index') }}">Volver</a>
+  </div>
+
+  <div class="tips-grid">
+    {% for cat in tips_by_category %}
+    <section class="guide-card">
+      <h3>{{ cat.title }}</h3>
+      <ul>
+        {% for tip in cat.tips %}
+        <li>{{ tip }}</li>
+        {% endfor %}
+      </ul>
+      <a class="inline-link" href="{{ url_for('guide', slug=cat.slug) }}">Ver guia completa</a>
+    </section>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

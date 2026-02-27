@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 
 {% block title %}Home - Empire #185{% endblock %}
 
@@ -11,16 +11,34 @@
 <div class="header-logo">
     <img src="{{ url_for('static', filename='LOGO.jpg') }}" alt="ecoloverlogo">
 
+<div class="user-info">
+      <span> Hola, <strong>{{ user }}</strong></span>
+</div>
+
+<div class="menu-principal">
+  <article>
+    <h2>Como funciona?</h2>
+    <p>
+      Sube tus imagenes de residuos
+    </p>
+  </article>
+      <article>
+    <h2>Puntos de venta</h2>
+    <p>
+      Donde puedes llevar tus residuos para reciclarlos correctamente
+    </p>
+  </article>
+  
+</div>
+
 </div>
   <div class="nav-container">
-    <div class="user-info">
-      <span> Hola, <strong>{{ user }}</strong></span>
-
-    </div>
       <span class="model-info"><span class="accent-dot"></span> {{ labels|join(' · ') }}
       </span>
 
   </div>
+
+
 
   <!-- Drop Zone -->
   <div class="drop-zone" id="drop-zone">
@@ -73,6 +91,30 @@
     <button class="btn btn-ghost"   onclick="exportJSON()">↓ Exportar JSON</button>
   </div>
 </div>
+
+
+  <div class="camera-dock" id="camera-dock" hidden>
+    <div class="camera-dock-head">
+      <strong>Cara</strong>
+      <button class="btn btn-ghost" id="close-camera-dock" type="button">Cerrar</button>
+    </div>
+    <div class="camera-body">
+      <video id="camera-video" autoplay playsinline muted></video>
+      <canvas id="camera-canvas" style="display:none"></canvas>
+    </div>
+    <div class="camera-footer">
+      <button class="btn btn-primary" id="btn-capture" type="button" disabled>Tomar foto y analizar</button>
+      <span class="camera-hint">Permite acceso a camara para habilitar captura.</span>
+    </div>
+  </div>
+
+  <nav class="floating-island" aria-label="Accesos rapidos">
+    <a class="island-btn island-side" href="{{ url_for('places') }}">Lugares</a>
+    <button class="island-btn island-center" id="open-camera-dock" type="button">
+      <img src="{{ url_for('static', filename='camera.svg') }}" alt="">
+    </button>
+    <a class="island-btn island-side" href="{{ url_for('tips') }}">Tips</a>
+  </nav>
 
 <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>

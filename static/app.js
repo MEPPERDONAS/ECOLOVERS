@@ -1,84 +1,125 @@
-const LABELS = ['Cartón', 'Vidrio', 'Metal', 'Papel', 'Plástico', 'Basura General'];
+﻿const LABELS = ['Cartón', 'Vidrio', 'Metal', 'Papel', 'Plástico', 'Basura General'];
 const CAT_ICONS = ['📦', '🍶', '🔩', '📄', '🧴', '🗑️'];
+const GUIDE_SLUGS = ['carton', 'vidrio', 'metal', 'papel', 'plastico', 'basura-general'];
 
-// Estado en memoria
 let imageQueue = [];
 let analyzing = false;
-
-// CÃ¡mara
-const videoEl = document.getElementById('camera-video');
-const canvasEl = document.getElementById('camera-canvas');
-const btnCapture = document.getElementById('btn-capture');
-const btnStopCamera = document.getElementById('btn-stop-camera');
 let cameraStream = null;
 
-// ── Drag & Drop ────────────────────────────────────────────
 const dropZone = document.getElementById('drop-zone');
 const fileInput = document.getElementById('file-input');
 
-dropZone.addEventListener('dragover', e => {
-  e.preventDefault();
-  dropZone.classList.add('dragover');
-});
-dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-dropZone.addEventListener('drop', e => {
-  e.preventDefault();
-  dropZone.classList.remove('dragover');
-  addFiles([...e.dataTransfer.files]);
-});
-dropZone.addEventListener('click', e => {
-  if (e.target.tagName !== 'SPAN') fileInput.click();
-});
-fileInput.addEventListener('change', () => addFiles([...fileInput.files]));
+const cameraDock = document.getElementById('camera-dock');
+const openCameraDockBtn = document.getElementById('open-camera-dock');
+const closeCameraDockBtn = document.getElementById('close-camera-dock');
+const videoEl = document.getElementById('camera-video');
+const canvasEl = document.getElementById('camera-canvas');
+const btnCapture = document.getElementById('btn-capture');
 
-// â”€â”€ CÃ¡mara â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+if (dropZone && fileInput) {
+  dropZone.addEventListener('dragover', e => {
+    e.preventDefault();
+    dropZone.classList.add('dragover');
+  });
+
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    addFiles([...e.dataTransfer.files]);
+  });
+
+  dropZone.addEventListener('click', e => {
+    if (e.target.tagName !== 'SPAN') fileInput.click();
+  });
+
+  fileInput.addEventListener('change', () => addFiles([...fileInput.files]));
+}
+
+if (openCameraDockBtn) {
+  openCameraDockBtn.addEventListener('click', openCameraDock);
+}
+if (closeCameraDockBtn) {
+  closeCameraDockBtn.addEventListener('click', closeCameraDock);
+}
+if (btnCapture) {
+  btnCapture.addEventListener('click', captureAndAnalyze);
+}
+
+async function openCameraDock() {
+  if (!cameraDock) return;
+  cameraDock.hidden = false;
+  await startCamera();
+}
+
+function closeCameraDock() {
+  if (cameraDock) cameraDock.hidden = true;
+  stopCamera();
+}
+
 async function startCamera() {
+  if (!videoEl || !btnCapture) return;
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    alert('Tu navegador no soporta acceso a la cÃ¡mara.');
+    alert('Tu navegador no soporta acceso a la camara.');
     return;
   }
   try {
     cameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
     videoEl.srcObject = cameraStream;
     btnCapture.disabled = false;
-    btnStopCamera.disabled = false;
   } catch (e) {
     console.error(e);
-    alert('No se pudo abrir la cÃ¡mara. Revisa los permisos del navegador.');
+    alert('No se pudo abrir la camara. Revisa permisos del navegador.');
   }
 }
 
 function stopCamera() {
   if (!cameraStream) return;
-  cameraStream.getTracks().forEach(t => t.stop());
+  cameraStream.getTracks().forEach(track => track.stop());
   cameraStream = null;
   if (videoEl) videoEl.srcObject = null;
-  btnCapture.disabled = true;
-  btnStopCamera.disabled = true;
+  if (btnCapture) btnCapture.disabled = true;
 }
 
-function capturePhoto() {
-  if (!cameraStream || !videoEl) return;
-  const w = videoEl.videoWidth;
-  const h = videoEl.videoHeight;
-  if (!w || !h) return;
+async function captureAndAnalyze() {
+  if (!cameraStream || !videoEl || !canvasEl) return;
 
-  canvasEl.width = w;
-  canvasEl.height = h;
+  const width = videoEl.videoWidth;
+  const height = videoEl.videoHeight;
+  if (!width || !height) return;
+
+  canvasEl.width = width;
+  canvasEl.height = height;
   const ctx = canvasEl.getContext('2d');
-  ctx.drawImage(videoEl, 0, 0, w, h);
+  ctx.drawImage(videoEl, 0, 0, width, height);
 
-  canvasEl.toBlob(blob => {
+  canvasEl.toBlob(async blob => {
     if (!blob) return;
-    const filename = `captura_${Date.now()}.png`;
-    const file = new File([blob], filename, { type: 'image/png' });
+
+    const file = new File([blob], `captura_${Date.now()}.png`, { type: 'image/png' });
     addFiles([file]);
+
+    const lastItem = imageQueue[imageQueue.length - 1];
+    if (!lastItem) return;
+
+    try {
+      showAnalyzingOverlay(lastItem.id);
+      lastItem.result = await classifyImage(lastItem);
+      removeAnalyzingOverlay(lastItem.id);
+      updateCard(lastItem);
+      showSummary();
+      closeCameraDock();
+    } catch (error) {
+      removeAnalyzingOverlay(lastItem.id);
+      console.error(error);
+      alert('No se pudo analizar la foto capturada.');
+    }
   }, 'image/png');
 }
 
 window.addEventListener('beforeunload', stopCamera);
 
-// ── Agregar imágenes ───────────────────────────────────────
 function addFiles(files) {
   const valid = files.filter(f => f.type.startsWith('image/'));
   valid.forEach(file => {
@@ -92,6 +133,8 @@ function addFiles(files) {
 
 function renderCard(item) {
   const grid = document.getElementById('image-grid');
+  if (!grid) return;
+
   const card = document.createElement('div');
   card.className = 'image-card';
   card.id = `card-${item.id}`;
@@ -99,13 +142,13 @@ function renderCard(item) {
     <img src="${item.url}" alt="${item.name}">
     <div class="image-card-info">
       <div class="image-name">${item.name}</div>
-      <div class="image-result" id="result-${item.id}">—</div>
+      <div class="image-result" id="result-${item.id}">-</div>
       <div class="image-confidence" id="conf-${item.id}"></div>
       <div class="confidence-bar">
         <div class="confidence-fill" id="bar-${item.id}" style="width:0%"></div>
       </div>
     </div>
-    <button class="remove-btn" onclick="removeItem('${item.id}')">✕</button>
+    <button class="remove-btn" onclick="removeItem('${item.id}')">x</button>
   `;
   grid.appendChild(card);
 }
@@ -118,29 +161,40 @@ function removeItem(id) {
 
 function clearAll() {
   imageQueue = [];
-  document.getElementById('image-grid').innerHTML = '';
-  document.getElementById('summary').style.display = 'none';
-  document.getElementById('export-area').style.display = 'none';
+  const grid = document.getElementById('image-grid');
+  const summary = document.getElementById('summary');
+  const exportArea = document.getElementById('export-area');
+  if (grid) grid.innerHTML = '';
+  if (summary) summary.style.display = 'none';
+  if (exportArea) exportArea.style.display = 'none';
   updateUI();
 }
 
 function updateUI() {
   const count = imageQueue.length;
-  document.getElementById('batch-header').style.display = count > 0 ? 'flex' : 'none';
-  document.getElementById('img-count').textContent = count;
-  document.getElementById('analyze-area').style.display = count > 0 ? 'flex' : 'none';
+  const batchHeader = document.getElementById('batch-header');
+  const countEl = document.getElementById('img-count');
+  const analyzeArea = document.getElementById('analyze-area');
+
+  if (batchHeader) batchHeader.style.display = count > 0 ? 'flex' : 'none';
+  if (countEl) countEl.textContent = count;
+  if (analyzeArea) analyzeArea.style.display = count > 0 ? 'flex' : 'none';
 }
 
-// ── Análisis ───────────────────────────────────────────────
 async function analyzeAll() {
   if (analyzing || imageQueue.length === 0) return;
   analyzing = true;
 
   const pending = imageQueue.filter(i => i.result === null);
-  if (!pending.length) { analyzing = false; return; }
+  if (!pending.length) {
+    analyzing = false;
+    return;
+  }
 
-  document.getElementById('btn-analyze').disabled = true;
-  document.getElementById('progress-wrap').style.display = 'block';
+  const analyzeBtn = document.getElementById('btn-analyze');
+  const progressWrap = document.getElementById('progress-wrap');
+  if (analyzeBtn) analyzeBtn.disabled = true;
+  if (progressWrap) progressWrap.style.display = 'block';
 
   for (let i = 0; i < pending.length; i++) {
     const item = pending[i];
@@ -151,7 +205,7 @@ async function analyzeAll() {
       item.result = await classifyImage(item);
     } catch (e) {
       console.error(e);
-      item.result = { label: 'Error', confidence: 0, catIndex: -1 };
+      item.result = { label: 'Error', confidence: 0, catIndex: -1, slug: '' };
     }
 
     removeAnalyzingOverlay(item.id);
@@ -159,8 +213,8 @@ async function analyzeAll() {
     updateProgress(i + 1, pending.length, '');
   }
 
-  document.getElementById('btn-analyze').disabled = false;
-  document.getElementById('progress-wrap').style.display = 'none';
+  if (analyzeBtn) analyzeBtn.disabled = false;
+  if (progressWrap) progressWrap.style.display = 'none';
   showSummary();
   analyzing = false;
 }
@@ -170,7 +224,6 @@ async function classifyImage(item) {
   formData.append('image', item.file);
 
   const res = await fetch('/predict', { method: 'POST', body: formData });
-
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err.error || `HTTP ${res.status}`);
@@ -178,28 +231,28 @@ async function classifyImage(item) {
 
   const data = await res.json();
   return {
-    label:      data.label,
+    label: data.label,
+    slug: data.slug || GUIDE_SLUGS[LABELS.indexOf(data.label)] || '',
     confidence: data.confidence,
-    catIndex:   LABELS.indexOf(data.label),
-    allScores:  data.all_scores || []
+    catIndex: LABELS.indexOf(data.label),
+    allScores: data.all_scores || []
   };
 }
 
-// ── UI helpers ─────────────────────────────────────────────
 function updateCard(item) {
-  const { label, confidence, catIndex } = item.result;
+  const { label, slug, confidence, catIndex } = item.result;
   document.getElementById(`card-${item.id}`)?.classList.add('analyzed');
 
   const resultEl = document.getElementById(`result-${item.id}`);
-  const confEl   = document.getElementById(`conf-${item.id}`);
-  const barEl    = document.getElementById(`bar-${item.id}`);
+  const confEl = document.getElementById(`conf-${item.id}`);
+  const barEl = document.getElementById(`bar-${item.id}`);
 
   if (resultEl) {
-    resultEl.textContent = `${CAT_ICONS[catIndex] ?? '?'} ${label}`;
-    resultEl.className   = `image-result cat-${catIndex}`;
+    resultEl.innerHTML = `<a href="/guia/${slug}" class="result-link">${CAT_ICONS[catIndex] ?? '?'} ${label}</a>`;
+    resultEl.className = `image-result cat-${catIndex}`;
   }
   if (confEl) confEl.textContent = `${confidence}% confianza`;
-  if (barEl)  setTimeout(() => { barEl.style.width = confidence + '%'; }, 100);
+  if (barEl) setTimeout(() => { barEl.style.width = `${confidence}%`; }, 100);
 }
 
 function showAnalyzingOverlay(id) {
@@ -208,7 +261,7 @@ function showAnalyzingOverlay(id) {
   const overlay = document.createElement('div');
   overlay.className = 'analyzing-overlay';
   overlay.id = `overlay-${id}`;
-  overlay.innerHTML = `<div class="spinner"></div><div class="spinner-label">Analizando</div>`;
+  overlay.innerHTML = '<div class="spinner"></div><div class="spinner-label">Analizando</div>';
   card.appendChild(overlay);
 }
 
@@ -218,51 +271,57 @@ function removeAnalyzingOverlay(id) {
 
 function updateProgress(current, total, filename) {
   const pct = Math.round((current / total) * 100);
-  document.getElementById('progress-fill').style.width = pct + '%';
-  document.getElementById('progress-pct').textContent  = pct + '%';
-  document.getElementById('progress-text').textContent =
-    current < total ? `Analizando: ${filename}` : '✓ Completado';
+  const fill = document.getElementById('progress-fill');
+  const pctEl = document.getElementById('progress-pct');
+  const text = document.getElementById('progress-text');
+  if (fill) fill.style.width = `${pct}%`;
+  if (pctEl) pctEl.textContent = `${pct}%`;
+  if (text) text.textContent = current < total ? `Analizando: ${filename}` : 'Completado';
 }
 
 function showSummary() {
-  const counts = Object.fromEntries(LABELS.map(l => [l, 0]));
+  const counts = Object.fromEntries(LABELS.map(label => [label, 0]));
   imageQueue
     .filter(i => i.result && i.result.label !== 'Error')
     .forEach(i => counts[i.result.label]++);
 
   const grid = document.getElementById('summary-grid');
+  if (!grid) return;
+
   grid.innerHTML = '';
 
   LABELS.forEach((label, idx) => {
     if (!counts[label]) return;
+    const slug = GUIDE_SLUGS[idx];
     const el = document.createElement('div');
     el.className = 'summary-item';
     el.innerHTML = `
-      <div class="summary-count cat-${idx}">${counts[label]}</div>
-      <div style="font-size:1.5rem">${CAT_ICONS[idx]}</div>
-      <div class="summary-label">${label}</div>
+      <a href="/guia/${slug}" class="summary-link">
+        <div class="summary-count cat-${idx}">${counts[label]}</div>
+        <div style="font-size:1.5rem">${CAT_ICONS[idx]}</div>
+        <div class="summary-label">${label}</div>
+      </a>
     `;
     grid.appendChild(el);
   });
 
-  document.getElementById('summary').style.display      = 'block';
-  document.getElementById('export-area').style.display  = 'flex';
+  const summary = document.getElementById('summary');
+  const exportArea = document.getElementById('export-area');
+  if (summary) summary.style.display = 'block';
+  if (exportArea) exportArea.style.display = 'flex';
 }
 
-// ── Exportar ───────────────────────────────────────────────
 function exportCSV() {
-  const rows = [['Archivo', 'Clasificación', 'Confianza (%)']];
-  imageQueue.filter(i => i.result).forEach(i =>
-    rows.push([i.name, i.result.label, i.result.confidence])
-  );
+  const rows = [['Archivo', 'Clasificacion', 'Confianza (%)']];
+  imageQueue.filter(i => i.result).forEach(i => rows.push([i.name, i.result.label, i.result.confidence]));
   download('resultados_clasificacion.csv', rows.map(r => r.join(',')).join('\n'), 'text/csv');
 }
 
 function exportJSON() {
   const data = imageQueue.filter(i => i.result).map(i => ({
-    archivo:        i.name,
-    clasificacion:  i.result.label,
-    confianza:      i.result.confidence
+    archivo: i.name,
+    clasificacion: i.result.label,
+    confianza: i.result.confidence
   }));
   download('resultados_clasificacion.json', JSON.stringify(data, null, 2), 'application/json');
 }

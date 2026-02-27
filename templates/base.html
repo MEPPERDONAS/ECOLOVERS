@@ -9,7 +9,9 @@
 
 <body>
     <header>
-        ecolover
+        <div class="profileimg">
+            <img src="{{ url_for('static', filename='profileicon.png') }}" alt="Profileimg">
+        </div>
         <a class="btn btn-ghost btn-logout" href="{{ url_for('logout') }}">Cerrar sesión</a>
     </header>
     <main>
@@ -17,12 +19,9 @@
     </main>
     <!-- Toast Notification -->
     <div id="toast-notification" class="toast-notification hidden"></div>
-    <footer class="main-footer">
-        <div class="footer-content">
-            <p>&copy; Ecolovers.</p>
-            <p>Developed by: Fabian Solano</p>
-
-        </div>
+    <footer>
+        <p>&copy; Ecolovers.</p>
+        <p>Developed by: Fabian Solano</p>
     </footer>
 </body>
 

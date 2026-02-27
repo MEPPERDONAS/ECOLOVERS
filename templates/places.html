@@ -1,0 +1,25 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Lugares de Reciclaje{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="guide-header">
+    <div>
+      <h2>Lugares para Depositar Residuos</h2>
+      <p class="guide-bin">Puntos recomendados para entregar materiales reciclables.</p>
+    </div>
+    <a class="btn btn-ghost" href="{{ url_for('index') }}">Volver</a>
+  </div>
+
+  <div class="places-grid">
+    {% for place in places %}
+    <article class="guide-card">
+      <h3>{{ place.name }}</h3>
+      <p>{{ place.desc }}</p>
+      <p><strong>Horario:</strong> {{ place.hours }}</p>
+    </article>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

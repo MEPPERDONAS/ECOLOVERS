@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Guia - {{ guide.title }}{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="guide-header">
+    <div>
+      <h2>Guia de manejo: {{ guide.title }}</h2>
+      <p class="guide-bin"><strong>Depositar en:</strong> {{ guide.bin }}</p>
+    </div>
+    <a class="btn btn-ghost" href="{{ url_for('index') }}">Volver</a>
+  </div>
+
+  <div class="guide-grid">
+    <section class="guide-card">
+      <h3>Que si hacer</h3>
+      <ul>
+        {% for item in guide.how_to %}
+          <li>{{ item }}</li>
+        {% endfor %}
+      </ul>
+    </section>
+
+    <section class="guide-card">
+      <h3>Tips</h3>
+      <ul>
+        {% for item in guide.tips %}
+          <li>{{ item }}</li>
+        {% endfor %}
+      </ul>
+    </section>
+
+    <section class="guide-card guide-card-danger">
+      <h3>Como NO reciclar</h3>
+      <ul>
+        {% for item in guide.dont %}
+          <li>{{ item }}</li>
+        {% endfor %}
+      </ul>
+    </section>
+  </div>
+</div>
+{% endblock %}
