@@ -1,0 +1,116 @@
+{
+  "carton": {
+    "title": "Cartón",
+    "bin": "Caneca blanca (aprovechables limpios y secos).",
+    "how_to": [
+      "Dobla y compacta cajas para ahorrar espacio.",
+      "Retira cintas plásticas y restos de comida.",
+      "Mantén el material seco antes de depositarlo."
+    ],
+    "tips": [
+      "Separa cartón corrugado de otros residuos.",
+      "Si está húmedo o con grasa, no va en reciclaje.",
+      "Usa bolsas o contenedores secos para almacenarlo."
+    ],
+    "dont": [
+      "No mezclar con servilletas usadas o papel sanitario.",
+      "No botar cartón con aceite, grasa o moho.",
+      "No incluir cartón plastificado muy contaminado."
+    ]
+  },
+  "vidrio": {
+    "title": "Vidrio",
+    "bin": "Caneca blanca (aprovechables), limpio y sin tapas.",
+    "how_to": [
+      "Enjuaga botellas y frascos para quitar residuos.",
+      "Separa tapas metálicas o plásticas.",
+      "Deposita con cuidado para evitar rupturas."
+    ],
+    "tips": [
+      "Agrupa por tipo: botellas y frascos de alimentos.",
+      "Si se rompe, envuelve y marca como cortopunzante.",
+      "Prioriza reuso de frascos antes de reciclar."
+    ],
+    "dont": [
+      "No mezclar vidrio con cerámica o espejo.",
+      "No depositar bombillos comunes o tubos fluorescentes.",
+      "No enviar vidrio contaminado con químicos peligrosos."
+    ]
+  },
+  "metal": {
+    "title": "Metal",
+    "bin": "Caneca blanca, limpio y sin residuos orgánicos.",
+    "how_to": [
+      "Enjuaga latas de bebidas o conservas.",
+      "Aplasta latas para reducir volumen.",
+      "Separa piezas metálicas de otros materiales."
+    ],
+    "tips": [
+      "Junta aluminio y hojalata en un mismo flujo limpio.",
+      "Revisa bordes filosos antes de manipular.",
+      "Entrega chatarra grande a gestores autorizados."
+    ],
+    "dont": [
+      "No mezclar con residuos de comida.",
+      "No incluir aerosoles con contenido restante.",
+      "No botar pilas o baterías como si fueran metal común."
+    ]
+  },
+  "papel": {
+    "title": "Papel",
+    "bin": "Caneca blanca, papel limpio y seco.",
+    "how_to": [
+      "Separa hojas, periódicos y cuadernos sin espiral.",
+      "Mantén el papel lejos de humedad.",
+      "Retira plásticos o grapas cuando sea posible."
+    ],
+    "tips": [
+      "Reutiliza hojas por ambas caras antes de reciclar.",
+      "Compacta papel en paquetes para facilitar recolección.",
+      "Clasifica papel blanco y mixto si tu operador lo pide."
+    ],
+    "dont": [
+      "No incluir papel sanitario o servilletas usadas.",
+      "No reciclar papel con grasa o restos de comida.",
+      "No mezclar con papel plastificado contaminado."
+    ]
+  },
+  "plastico": {
+    "title": "Plástico",
+    "bin": "Caneca blanca, envases limpios y secos.",
+    "how_to": [
+      "Enjuaga envases y deja escurrir.",
+      "Aplasta botellas PET y cierra con tapa.",
+      "Separa plásticos flexibles si el operador lo exige."
+    ],
+    "tips": [
+      "Prioriza reducir y reutilizar antes de reciclar.",
+      "Identifica código de resina cuando sea visible.",
+      "Acumula en bolsa limpia para evitar contaminación."
+    ],
+    "dont": [
+      "No mezclar con empaques sucios de comida.",
+      "No incluir icopor sucio o residuos peligrosos.",
+      "No quemar plásticos a cielo abierto."
+    ]
+  },
+  "basura-general": {
+    "title": "Basura General",
+    "bin": "Caneca negra (no aprovechables).",
+    "how_to": [
+      "Deposita residuos que no se pueden reciclar.",
+      "Usa bolsas cerradas para evitar derrames.",
+      "Separa siempre de reciclables y orgánicos."
+    ],
+    "tips": [
+      "Revisa antes si algún material puede recuperarse.",
+      "Reduce el volumen de residuos en casa.",
+      "Gestiona aparte residuos peligrosos y especiales."
+    ],
+    "dont": [
+      "No mezclar reciclables limpios en caneca negra.",
+      "No botar pilas, medicamentos o electrónicos aquí.",
+      "No dejar residuos sueltos en vía pública."
+    ]
+  }
+}

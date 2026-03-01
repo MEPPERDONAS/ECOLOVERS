@@ -29,122 +29,9 @@ IMG_SIZE   = (384, 384)
 LABELS     = ['Cartón', 'Vidrio', 'Metal', 'Papel', 'Plástico', 'Basura General']
 ICONS      = ['📦',      '🍶',    '🔩',   '📄',    '🧴',       '🗑️']
 GUIDE_SLUGS = ['carton', 'vidrio', 'metal', 'papel', 'plastico', 'basura-general']
-GUIDES = {
-    'carton': {
-        'title': 'Cartón',
-        'bin': 'Caneca blanca (aprovechables limpios y secos).',
-        'how_to': [
-            'Dobla y compacta cajas para ahorrar espacio.',
-            'Retira cintas plásticas y restos de comida.',
-            'Mantén el material seco antes de depositarlo.',
-        ],
-        'tips': [
-            'Separa cartón corrugado de otros residuos.',
-            'Si está húmedo o con grasa, no va en reciclaje.',
-            'Usa bolsas o contenedores secos para almacenarlo.',
-        ],
-        'dont': [
-            'No mezclar con servilletas usadas o papel sanitario.',
-            'No botar cartón con aceite, grasa o moho.',
-            'No incluir cartón plastificado muy contaminado.',
-        ],
-    },
-    'vidrio': {
-        'title': 'Vidrio',
-        'bin': 'Caneca blanca (aprovechables), limpio y sin tapas.',
-        'how_to': [
-            'Enjuaga botellas y frascos para quitar residuos.',
-            'Separa tapas metálicas o plásticas.',
-            'Deposita con cuidado para evitar rupturas.',
-        ],
-        'tips': [
-            'Agrupa por tipo: botellas y frascos de alimentos.',
-            'Si se rompe, envuelve y marca como cortopunzante.',
-            'Prioriza reuso de frascos antes de reciclar.',
-        ],
-        'dont': [
-            'No mezclar vidrio con cerámica o espejo.',
-            'No depositar bombillos comunes o tubos fluorescentes.',
-            'No enviar vidrio contaminado con quí­micos peligrosos.',
-        ],
-    },
-    'metal': {
-        'title': 'Metal',
-        'bin': 'Caneca blanca, limpio y sin residuos orgánicos.',
-        'how_to': [
-            'Enjuaga latas de bebidas o conservas.',
-            'Aplasta latas para reducir volumen.',
-            'Separa piezas metálicas de otros materiales.',
-        ],
-        'tips': [
-            'Junta aluminio y hojalata en un mismo flujo limpio.',
-            'Revisa bordes filosos antes de manipular.',
-            'Entrega chatarra grande a gestores autorizados.',
-        ],
-        'dont': [
-            'No mezclar con residuos de comida.',
-            'No incluir aerosoles con contenido restante.',
-            'No botar pilas o baterías como si fueran metal común.',
-        ],
-    },
-    'papel': {
-        'title': 'Papel',
-        'bin': 'Caneca blanca, papel limpio y seco.',
-        'how_to': [
-            'Separa hojas, periódicos y cuadernos sin espiral.',
-            'Mantén el papel lejos de humedad.',
-            'Retira plásticos o grapas cuando sea posible.',
-        ],
-        'tips': [
-            'Reutiliza hojas por ambas caras antes de reciclar.',
-            'Compacta papel en paquetes para facilitar recolección.',
-            'Clasifica papel blanco y mixto si tu operador lo pide.',
-        ],
-        'dont': [
-            'No incluir papel sanitario o servilletas usadas.',
-            'No reciclar papel con grasa o restos de comida.',
-            'No mezclar con papel plastificado contaminado.',
-        ],
-    },
-    'plastico': {
-        'title': 'Plástico',
-        'bin': 'Caneca blanca, envases limpios y secos.',
-        'how_to': [
-            'Enjuaga envases y deja escurrir.',
-            'Aplasta botellas PET y cierra con tapa.',
-            'Separa plásticos flexibles si el operador lo exige.',
-        ],
-        'tips': [
-            'Prioriza reducir y reutilizar antes de reciclar.',
-            'Identifica código de resina cuando sea visible.',
-            'Acumula en bolsa limpia para evitar contaminación.',
-        ],
-        'dont': [
-            'No mezclar con empaques sucios de comida.',
-            'No incluir icopor sucio o residuos peligrosos.',
-            'No quemar plásticos a cielo abierto.',
-        ],
-    },
-    'basura-general': {
-        'title': 'Basura General',
-        'bin': 'Caneca negra (no aprovechables).',
-        'how_to': [
-            'Deposita residuos que no se pueden reciclar.',
-            'Usa bolsas cerradas para evitar derrames.',
-            'Separa siempre de reciclables y orgÃ¡nicos.',
-        ],
-        'tips': [
-            'Revisa antes si algÃºn material puede recuperarse.',
-            'Reduce el volumen de residuos en casa.',
-            'Gestiona aparte residuos peligrosos y especiales.',
-        ],
-        'dont': [
-            'No mezclar reciclables limpios en caneca negra.',
-            'No botar pilas, medicamentos o electrónicos aquí.',
-            'No dejar residuos sueltos en vía pública.',
-        ],
-    },
-}
+GUIDES_PATH = os.path.join(BASE_DIR, 'guides.json')
+with open(GUIDES_PATH, 'r', encoding='utf-8') as _f:
+    GUIDES = json.load(_f)
 
 
 app = Flask(__name__, root_path=BASE_DIR)
@@ -178,28 +65,7 @@ def login_required(view):
         return view(*args, **kwargs)
     return wrapped
 
-# ── Cargar modelo ──────────────────────────────────────────
-log.info("⏳  Cargando modelo…")
-if not os.path.exists(MODEL_PATH):
-    raise FileNotFoundError(
-        f"\n❌  Modelo no encontrado: '{MODEL_PATH}'\n"
-        f"    Coloca el archivo .keras en la misma carpeta que app.py\n"
-    )
-
 model = tf.keras.models.load_model(MODEL_PATH)
-
-# ── Info del modelo al arrancar ────────────────────────────
-log.info(f"✅  Modelo cargado: {MODEL_PATH}")
-log.info(f"    Input shape esperado : {model.input_shape}")
-log.info(f"    Output shape         : {model.output_shape}")
-log.info(f"    Número de clases     : {model.output_shape[-1]}")
-
-if model.output_shape[-1] != len(LABELS):
-    log.warning(
-        f"⚠️  DESAJUSTE: el modelo tiene {model.output_shape[-1]} salidas "
-        f"pero LABELS tiene {len(LABELS)} entradas."
-    )
-
 
 @app.route('/')
 @login_required
@@ -214,15 +80,12 @@ def predict():
 
     file      = request.files['image']
     filename  = file.filename
-    log.info(f"{'â”€'*50}")
-    log.info(f"ðŸ“¥  Imagen recibida: '{filename}'")
 
     img_bytes = file.read()
     
     # ── Abrir y preprocesar ────────────────────────────────
     try:
         img = Image.open(io.BytesIO(img_bytes))
-        log.debug(f"    Modo original: {img.mode} | Tamaño: {img.size}")
         img = img.convert('RGB')
         img = img.resize(IMG_SIZE)
         
@@ -237,27 +100,14 @@ def predict():
         # Esto ajusta los colores y resta la media de ImageNet
         img_array = preprocess_input(img_array)
         
-        log.debug(f"    Preprocesamiento ResNet50 aplicado.")
-        log.debug(f"    Rango valores: min={img_array.min():.1f} max={img_array.max():.1f}")
-        
     except Exception as e:
         log.error(f"âŒ  Error procesando imagen: {e}")
         return jsonify({'error': f'No se pudo procesar la imagen: {e}'}), 400
 
     preds = model.predict(img_array, verbose=0)[0]
-    
-    log.info(f"ðŸ“Š  Predicciones brutas (softmax):")
-    for i, (label, prob) in enumerate(zip(LABELS, preds)):
-        bar = 'â–ˆ' * int(prob * 30)
-        log.info(f"    [{i}] {label:<18} {prob:.6f}  {bar}")
-
     idx        = int(np.argmax(preds))
     confidence = float(round(float(preds[idx]) * 100, 2))
     log.info(f"ðŸ†  Resultado: '{LABELS[idx]}'  ({confidence}%)")
-
-    # Alerta si siempre gana la misma clase
-    if idx == len(LABELS) - 1 and confidence > 95:
-        log.warning("âš ï¸  Resultado recurrente: Basura General. Verifica el dataset original.")
 
     all_scores = sorted(
         [
@@ -389,6 +239,4 @@ def logout():
     return redirect(url_for('login'))
 
 if __name__ == '__main__':
-    log.info("ðŸš€  Servidor iniciado â†’ http://localhost:5000")
     app.run(host='0.0.0.0', port=5000, debug=True)
-

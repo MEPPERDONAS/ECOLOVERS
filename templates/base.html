@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Clasificador de Residuos</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.ico') }}" />
 </head>
 
 <body>
@@ -17,8 +18,7 @@
     <main>
         {% block content %}{% endblock %}
     </main>
-    <!-- Toast Notification -->
-    <div id="toast-notification" class="toast-notification hidden"></div>
+
     <footer>
         <p>&copy; Ecolovers.</p>
         <p>Developed by: Fabian Solano</p>
