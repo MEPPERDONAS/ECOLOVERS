@@ -314,7 +314,15 @@ def login_required(view):
 
 
 init_db()
-model = tf.keras.models.load_model(MODEL_PATH)
+model = None
+MODEL_AVAILABLE = False
+MODEL_ERROR = None
+try:
+    model = tf.keras.models.load_model(MODEL_PATH)
+    MODEL_AVAILABLE = True
+except Exception as e:
+    MODEL_ERROR = str(e)
+    log.warning('Modelo no disponible. Se inicia en modo navegacion sin analisis: %s', e)
 
 
 @app.route('/')
@@ -322,12 +330,15 @@ model = tf.keras.models.load_model(MODEL_PATH)
 def index():
     username = session.get('user')
     stats = compute_user_stats(username)
-    return render_template('index.html', model_name=MODEL_PATH, labels=LABELS, user=username, stats=stats)
+    return render_template('index.html', model_name=MODEL_PATH, labels=LABELS, user=username, stats=stats, model_available=MODEL_AVAILABLE)
 
 
 @app.route('/predict', methods=['POST'])
 @login_required
 def predict():
+    if not MODEL_AVAILABLE:
+        return jsonify({'error': 'Analisis no disponible en este momento: modelo .keras no cargado.'}), 503
+
     if 'image' not in request.files:
         return jsonify({'error': 'No se recibió ninguna imagen (campo: image)'}), 400
 
@@ -399,7 +410,13 @@ def analyses_api():
 @app.route('/health')
 @login_required
 def health():
-    return jsonify({'status': 'ok', 'input_shape': str(model.input_shape), 'labels_count': len(LABELS)})
+    return jsonify({
+        'status': 'ok',
+        'model_available': MODEL_AVAILABLE,
+        'model_error': MODEL_ERROR,
+        'input_shape': str(model.input_shape) if MODEL_AVAILABLE else None,
+        'labels_count': len(LABELS)
+    })
 
 
 @app.route('/guia/<slug>')
@@ -517,6 +534,8 @@ def logout():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
+
+
 
 
 
