@@ -14,4 +14,4 @@ services:
 
 databases:
   - name: mi-db-flask
-    plan: free # El plan gratuito de PostgreSQL
+    plan: free # El plan gratuito de PostgreSQLpipreqs . --force
