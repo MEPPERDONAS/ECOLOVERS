@@ -1,0 +1,90 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Historial de Analisis{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="guide-header">
+    <div>
+      <h2>Historial de Analisis</h2>
+      <p class="guide-bin">Resultados guardados para {{ user }}.</p>
+    </div>
+    <a class="btn btn-ghost" href="{{ url_for('index') }}">Volver</a>
+  </div>
+
+  <section class="stats-panel stats-panel-detail">
+    <div class="stats-head">
+      <h3>Resumen Detallado</h3>
+      <p>Total de analisis: <strong>{{ stats.total }}</strong></p>
+      <p>Primero: <strong>{{ stats.first_at or 'Sin datos' }}</strong></p>
+      <p>Ultimo: <strong>{{ stats.last_at or 'Sin datos' }}</strong></p>
+    </div>
+
+    <div class="stats-table-wrap">
+      <table class="stats-table">
+        <thead>
+          <tr>
+            <th>Categoria</th>
+            <th>Cantidad</th>
+            <th>Porcentaje</th>
+            <th>Primera fecha</th>
+            <th>Ultima fecha</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in stats.by_category %}
+          <tr>
+            <td><a class="inline-link" href="{{ url_for('guide', slug=row.slug) }}">{{ row.label }}</a></td>
+            <td>{{ row.count }}</td>
+            <td>{{ row.percentage }}%</td>
+            <td>{{ row.first_at or 'Sin registro' }}</td>
+            <td>{{ row.last_at or 'Sin registro' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="stats-timeline">
+      <h4>Trazabilidad por fecha</h4>
+      {% if stats.timeline %}
+        {% for point in stats.timeline %}
+        <div class="timeline-row">
+          <span>{{ point.date }}</span>
+          <strong>{{ point.count }} analisis</strong>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p class="history-meta">Sin registros de fechas todavia.</p>
+      {% endif %}
+    </div>
+  </section>
+
+  {% if items %}
+  <div class="history-list">
+    {% for item in items %}
+    <article class="history-item">
+      <div class="history-main">
+        <h3>
+          <a class="inline-link" href="{{ url_for('guide', slug=item.slug) }}">{{ item.label }}</a>
+          <span class="history-confidence">{{ item.confidence }}%</span>
+        </h3>
+        <p class="history-meta">Archivo: {{ item.filename or 'captura' }}</p>
+        <p class="history-meta">Fecha: {{ item.created_at }}</p>
+      </div>
+      <div class="history-scores">
+        {% for score in item.all_scores[:3] %}
+        <span class="history-chip">{{ score.label }}: {{ score.probability }}%</span>
+        {% endfor %}
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="guide-card">
+    <h3>Sin analisis todavia</h3>
+    <p>Cuando clasifiques imagenes, aqui veras tu historial guardado.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

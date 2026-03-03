@@ -15,6 +15,8 @@ const closeCameraDockBtn = document.getElementById('close-camera-dock');
 const videoEl = document.getElementById('camera-video');
 const canvasEl = document.getElementById('camera-canvas');
 const btnCapture = document.getElementById('btn-capture');
+const switchCameraBtn = document.getElementById('switch-camera');
+let currentFacingMode = 'environment';
 
 if (dropZone && fileInput) {
   dropZone.addEventListener('dragover', e => {
@@ -50,6 +52,7 @@ if (btnCapture) {
 async function openCameraDock() {
   if (!cameraDock) return;
   cameraDock.hidden = false;
+  currentFacingMode = 'environment';
   await startCamera();
 }
 
@@ -64,14 +67,54 @@ async function startCamera() {
     alert('Tu navegador no soporta acceso a la camara.');
     return;
   }
+
+  stopCamera();
+
   try {
-    cameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-    videoEl.srcObject = cameraStream;
-    btnCapture.disabled = false;
+    const constraints = {
+      audio: false,
+      video: {
+        facingMode: { ideal: currentFacingMode }
+      }
+    };
+
+    cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
   } catch (e) {
-    console.error(e);
-    alert('No se pudo abrir la camara. Revisa permisos del navegador.');
+    try {
+      cameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+    } catch (innerError) {
+      console.error(innerError);
+      alert('No se pudo abrir la camara. Revisa permisos del navegador.');
+      return;
+    }
   }
+
+  videoEl.srcObject = cameraStream;
+  btnCapture.disabled = false;
+  await updateSwitchCameraState();
+}
+
+async function switchCamera() {
+  currentFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment';
+  await startCamera();
+}
+
+async function updateSwitchCameraState() {
+  if (!switchCameraBtn || !navigator.mediaDevices?.enumerateDevices) return;
+
+  let videoInputs = [];
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    videoInputs = devices.filter(d => d.kind === 'videoinput');
+  } catch (_err) {
+    videoInputs = [];
+  }
+
+  const canSwitch = videoInputs.length > 1;
+  switchCameraBtn.disabled = !canSwitch;
+
+  const current = currentFacingMode === 'environment' ? 'trasera' : 'frontal';
+  switchCameraBtn.textContent = canSwitch ? `Camara: ${current}` : 'Una camara';
 }
 
 function stopCamera() {
@@ -332,3 +375,6 @@ function download(filename, content, type) {
   a.download = filename;
   a.click();
 }
+
+
+

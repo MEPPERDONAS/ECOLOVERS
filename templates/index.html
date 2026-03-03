@@ -2,45 +2,66 @@
 
 {% block title %}Home - Empire #185{% endblock %}
 
-
 {% block content %}
-
 <body>
-
 <div class="container">
-<div class="header-logo">
+  <div class="header-logo">
     <img src="{{ url_for('static', filename='LOGO.jpg') }}" alt="ecoloverlogo">
 
-<div class="user-info">
+    <div class="user-info">
       <span> Hola, <strong>{{ user }}</strong></span>
-</div>
+      <a class="btn btn-ghost btn-history" href="{{ url_for('history') }}">Historial</a>
+    </div>
 
-<div class="menu-principal">
-  <article>
-    <h2>Como funciona?</h2>
-    <p>
-      Sube tus imagenes de residuos
-    </p>
-  </article>
+    <div class="menu-principal">
       <article>
-    <h2>Puntos de venta</h2>
-    <p>
-      Donde puedes llevar tus residuos para reciclarlos correctamente
-    </p>
-  </article>
-  
-</div>
-
-</div>
-  <div class="nav-container">
-      <span class="model-info"><span class="accent-dot"></span> {{ labels|join(' · ') }}
-      </span>
-
+        <h2>Como funciona?</h2>
+        <p>Sube tus imagenes de residuos</p>
+      </article>
+      <article>
+        <h2>Puntos de venta</h2>
+        <p>Donde puedes llevar tus residuos para reciclarlos correctamente</p>
+      </article>
+    </div>
   </div>
 
+  <div class="nav-container">
+    <span class="model-info"><span class="accent-dot"></span> {{ labels|join(' · ') }}</span>
+  </div>
 
+  <section class="stats-panel">
+    <div class="stats-head">
+      <h3>Datos Generales de Analisis</h3>
+      <p>Total de analisis: <strong>{{ stats.total }}</strong></p>
+      <p>Trazabilidad: <strong>{{ stats.first_at or 'Sin datos' }}</strong> a <strong>{{ stats.last_at or 'Sin datos' }}</strong></p>
+    </div>
 
-  <!-- Drop Zone -->
+    <div class="stats-grid">
+      {% for row in stats.by_category %}
+      <article class="stats-card">
+        <h4><a class="inline-link" href="{{ url_for('guide', slug=row.slug) }}">{{ row.label }}</a></h4>
+        <p class="stats-number">{{ row.count }}</p>
+        <p class="stats-percent">{{ row.percentage }}%</p>
+        <p class="stats-range">{{ row.first_at or 'Sin registro' }}{% if row.last_at and row.last_at != row.first_at %} -> {{ row.last_at }}{% endif %}</p>
+      </article>
+      {% endfor %}
+    </div>
+
+    <div class="stats-timeline">
+      <h4>Trazabilidad por fecha (ultimos 30 dias con actividad)</h4>
+      {% if stats.timeline %}
+        {% for point in stats.timeline %}
+        <div class="timeline-row">
+          <span>{{ point.date }}</span>
+          <strong>{{ point.count }} analisis</strong>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p class="history-meta">Sin registros de fechas todavia.</p>
+      {% endif %}
+    </div>
+  </section>
+
   <div class="drop-zone" id="drop-zone">
     <span class="drop-icon">♻️</span>
     <h2>Arrastra tus imágenes aquí</h2>
@@ -52,23 +73,17 @@
     <input type="file" id="file-input" multiple accept="image/*">
   </div>
 
-  <!-- Batch header -->
   <div class="batch-header" id="batch-header" style="display:none">
     <h3>Cola de imágenes &nbsp;<span id="img-count" style="color:var(--accent)">0</span></h3>
     <button class="btn btn-ghost" onclick="clearAll()">Limpiar todo</button>
   </div>
 
-  <!-- Image Grid -->
   <div class="image-grid" id="image-grid"></div>
 
-  <!-- Analyze area -->
   <div class="analyze-area" id="analyze-area" style="display:none">
-    <button class="btn-analyze" id="btn-analyze" onclick="analyzeAll()">
-      ▶ Analizar imágenes
-    </button>
+    <button class="btn-analyze" id="btn-analyze" onclick="analyzeAll()">▶ Analizar imágenes</button>
   </div>
 
-  <!-- Progress -->
   <div class="progress-wrap" id="progress-wrap">
     <div class="progress-label">
       <span id="progress-text">Analizando...</span>
@@ -79,58 +94,56 @@
     </div>
   </div>
 
-  <!-- Summary -->
   <div class="summary" id="summary">
     <h3>// Resumen de clasificación</h3>
     <div class="summary-grid" id="summary-grid"></div>
   </div>
 
-  <!-- Export -->
   <div class="export-area" id="export-area">
     <button class="btn btn-primary" onclick="exportCSV()">↓ Exportar CSV</button>
-    <button class="btn btn-ghost"   onclick="exportJSON()">↓ Exportar JSON</button>
+    <button class="btn btn-ghost" onclick="exportJSON()">↓ Exportar JSON</button>
   </div>
 </div>
 
-
-  <div class="camera-dock" id="camera-dock" hidden>
-    <div class="camera-dock-head">
-      <strong>Cara</strong>
+<div class="camera-dock" id="camera-dock" hidden>
+  <div class="camera-dock-head">
+    <strong>Cara</strong>
+    <div class="camera-dock-actions">
+      <button class="btn btn-ghost" id="switch-camera" type="button">Cambiar camara</button>
       <button class="btn btn-ghost" id="close-camera-dock" type="button">Cerrar</button>
     </div>
-    <div class="camera-body">
-      <video id="camera-video" autoplay playsinline muted></video>
-      <canvas id="camera-canvas" style="display:none"></canvas>
-    </div>
-    <div class="camera-footer">
-      <button class="btn btn-primary" id="btn-capture" type="button" disabled>Tomar foto y analizar</button>
-      <span class="camera-hint">Permite acceso a camara para habilitar captura.</span>
-    </div>
   </div>
+  <div class="camera-body">
+    <video id="camera-video" autoplay playsinline muted></video>
+    <canvas id="camera-canvas" style="display:none"></canvas>
+  </div>
+  <div class="camera-footer">
+    <button class="btn btn-primary" id="btn-capture" type="button" disabled>Tomar foto y analizar</button>
+    <span class="camera-hint">Permite acceso a camara para habilitar captura.</span>
+  </div>
+</div>
 
-  <nav class="floating-island" aria-label="Accesos rapidos">
-    <a class="island-btn island-side" href="{{ url_for('places') }}">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
-          <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-          <path d="M12 18l-2 -4l-7 -3.5a.55 .55 0 0 1 0 -1l18 -6.5l-2.901 8.034" />
-          <path d="M21.121 20.121a3 3 0 1 0 -4.242 0c.418 .419 1.125 1.045 2.121 1.879c1.051 -.89 1.759 -1.516 2.121 -1.879" />
-          <path d="M19 18v.01" />
-        </svg>
-      </a>
+<nav class="floating-island" aria-label="Accesos rapidos">
+  <a class="island-btn island-side" href="{{ url_for('places') }}">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+      <path d="M12 18l-2 -4l-7 -3.5a.55 .55 0 0 1 0 -1l18 -6.5l-2.901 8.034" />
+      <path d="M21.121 20.121a3 3 0 1 0 -4.242 0c.418 .419 1.125 1.045 2.121 1.879c1.051 -.89 1.759 -1.516 2.121 -1.879" />
+      <path d="M19 18v.01" />
+    </svg>
+  </a>
 
+  <a class="island-btn island-center" id="open-camera-dock" type="button">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-camera"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 7h1a2 2 0 0 0 2 -2a1 1 0 0 1 1 -1h6a1 1 0 0 1 1 1a2 2 0 0 0 2 2h1a2 2 0 0 1 2 2v9a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-9a2 2 0 0 1 2 -2" /><path d="M9 13a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" /></svg>
+  </a>
 
-    <a class="island-btn island-center" id="open-camera-dock" type="button">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-camera"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 7h1a2 2 0 0 0 2 -2a1 1 0 0 1 1 -1h6a1 1 0 0 1 1 1a2 2 0 0 0 2 2h1a2 2 0 0 1 2 2v9a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-9a2 2 0 0 1 2 -2" /><path d="M9 13a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" /></svg>
-    </a>
-  
-  
-    <a class="island-btn island-side" href="{{ url_for('tips') }}">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="icon icon-tabler icons-tabler-filled icon-tabler-file-description"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 2l.117 .007a1 1 0 0 1 .876 .876l.007 .117v4l.005 .15a2 2 0 0 0 1.838 1.844l.157 .006h4l.117 .007a1 1 0 0 1 .876 .876l.007 .117v9a3 3 0 0 1 -2.824 2.995l-.176 .005h-10a3 3 0 0 1 -2.995 -2.824l-.005 -.176v-14a3 3 0 0 1 2.824 -2.995l.176 -.005zm3 14h-6a1 1 0 0 0 0 2h6a1 1 0 0 0 0 -2m0 -4h-6a1 1 0 0 0 0 2h6a1 1 0 0 0 0 -2" /><path d="M19 7h-4l-.001 -4.001z" /></svg>
-
-    </a>
-  </nav>
+  <a class="island-btn island-side" href="{{ url_for('tips') }}">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="icon icon-tabler icons-tabler-filled icon-tabler-file-description"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 2l.117 .007a1 1 0 0 1 .876 .876l.007 .117v4l.005 .15a2 2 0 0 0 1.838 1.844l.157 .006h4l.117 .007a1 1 0 0 1 .876 .876l.007 .117v9a3 3 0 0 1 -2.824 2.995l-.176 .005h-10a3 3 0 0 1 -2.995 -.176v-14a3 3 0 0 1 2.824 -2.995l.176 -.005zm3 14h-6a1 1 0 0 0 0 2h6a1 1 0 0 0 0 -2m0 -4h-6a1 1 0 0 0 0 2h6a1 1 0 0 0 0 -2" /><path d="M19 7h-4l-.001 -4.001z" /></svg>
+  </a>
+</nav>
 
 <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
 </html>
 {% endblock %}
+
