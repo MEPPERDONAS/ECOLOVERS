@@ -1,12 +1,12 @@
 ﻿{% extends "base.html" %}
 
-{% block title %}Home - Empire #185{% endblock %}
+{% block title %}Home{% endblock %}
 
 {% block content %}
 <body>
 <div class="container">
   <div class="header-logo">
-    <img src="{{ url_for('static', filename='LOGO.jpg') }}" alt="ecoloverlogo">
+    <img src="{{ url_for('static', filename='LOGO.PNG') }}" alt="ecoloverlogo">
 
     <div class="user-info">
       <span> Hola, <strong>{{ user }}</strong></span>
@@ -34,15 +34,20 @@
       <h3>Datos Generales de Analisis</h3>
       <p>Total de analisis: <strong>{{ stats.total }}</strong></p>
       <p>Trazabilidad: <strong>{{ stats.first_at or 'Sin datos' }}</strong> a <strong>{{ stats.last_at or 'Sin datos' }}</strong></p>
+      <button class="btn-vermas" id="detalles-btn">Detalles</button>
     </div>
 
-    <div class="stats-grid">
+    <div class="stats-grid" id="stats-info">
       {% for row in stats.by_category %}
       <article class="stats-card">
-        <h4><a class="inline-link" href="{{ url_for('guide', slug=row.slug) }}">{{ row.label }}</a></h4>
+        <div class="details">
+          <h4><a class="inline-link" href="{{ url_for('guide', slug=row.slug) }}">{{ row.label }}</a></h4>
+          <p class="stats-percent">{{ row.percentage }}%</p>
+          <p class="stats-range">{{ row.first_at or 'Sin registro' }}{% if row.last_at and row.last_at != row.first_at %} -> {{ row.last_at }}{% endif %}</p>
+        </div>
         <p class="stats-number">{{ row.count }}</p>
-        <p class="stats-percent">{{ row.percentage }}%</p>
-        <p class="stats-range">{{ row.first_at or 'Sin registro' }}{% if row.last_at and row.last_at != row.first_at %} -> {{ row.last_at }}{% endif %}</p>
+
+      
       </article>
       {% endfor %}
     </div>

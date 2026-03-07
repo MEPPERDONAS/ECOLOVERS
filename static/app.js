@@ -376,5 +376,21 @@ function download(filename, content, type) {
   a.click();
 }
 
+const botonDetalles = document.getElementById('detalles-btn');
+const statsGrid = document.getElementById('stats-info');
 
+botonDetalles.addEventListener('click', () => {
+  const estaActivo = statsGrid.classList.contains('active');
+
+  if (!estaActivo) {
+    statsGrid.classList.add('active');
+    // Le decimos al navegador exactamente cuántos píxeles mide el contenido
+    statsGrid.style.maxHeight = statsGrid.scrollHeight + "px";
+    statsGrid.style.opacity = "1";
+  } else {
+    statsGrid.classList.remove('active');
+    statsGrid.style.maxHeight = "0";
+    statsGrid.style.opacity = "0";
+  }
+});
 
