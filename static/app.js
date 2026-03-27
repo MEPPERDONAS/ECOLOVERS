@@ -40,8 +40,15 @@ if (dropZone && fileInput) {
 }
 
 if (openCameraDockBtn) {
-  openCameraDockBtn.addEventListener('click', openCameraDock);
+  openCameraDockBtn.addEventListener('click', () => {
+    if (window.location.pathname === '/') {
+      openCameraDock();
+    } else {
+      window.location.href = '/';
+    }
+  });
 }
+
 if (closeCameraDockBtn) {
   closeCameraDockBtn.addEventListener('click', closeCameraDock);
 }
@@ -266,23 +273,86 @@ async function classifyImage(item) {
   const formData = new FormData();
   formData.append('image', item.file);
 
-  const res = await fetch('/predict', { method: 'POST', body: formData });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || `HTTP ${res.status}`);
+  try {
+    const res = await fetch('/predict', { method: 'POST', body: formData });
+    if (!res.ok) throw new Error("Fallo de IA");
+    
+    const data = await res.json();
+    return data;
+  } catch (e) {
+    showManualSelection(item.id); //
+    return { label: 'Pendiente', confidence: 0, manual: true };
+  }
+}
+
+function showManualSelection(id) {
+  const resultEl = document.getElementById(`result-${id}`);
+  if (!resultEl) return;
+
+  // Creamos el selector con las categorías globales que ya tienes
+  let options = LABELS.map((l, i) => `<option value="${i}">${CAT_ICONS[i]} ${l}</option>`).join('');
+  
+  resultEl.innerHTML = `
+    <div class="manual-fallback">
+      <p style="margin:0 0 5px 0; font-size:11px; color:#e53e3e; font-weight:bold;">IA no disponible</p>
+      <select id="select-${id}" class="manual-select">
+        <option value="" disabled selected>¿Qué es?</option>
+        ${options}
+      </select>
+      <button onclick="confirmManual('${id}')" class="btn-confirm-manual">Guardar Selección</button>
+    </div>
+  `;
+  
+  // Quitamos cualquier overlay de "analizando" para que deje interactuar
+  removeAnalyzingOverlay(id);
+}
+
+async function confirmManual(id) {
+  const select = document.getElementById(`select-${id}`);
+  const labelIndex = select.value;
+  
+  if (labelIndex === "") {
+    alert("Por favor, selecciona una categoría primero.");
+    return;
   }
 
-  const data = await res.json();
-  return {
-    label: data.label,
-    slug: data.slug || GUIDE_SLUGS[LABELS.indexOf(data.label)] || '',
-    confidence: data.confidence,
-    catIndex: LABELS.indexOf(data.label),
-    allScores: data.all_scores || []
-  };
+  // Buscamos el objeto en tu cola de imágenes
+  const item = imageQueue.find(i => String(i.id) === String(id));
+  if (!item) return;
+
+  try {
+    const res = await fetch('/save_manual', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        label: LABELS[labelIndex],
+        filename: item.name
+      })
+    });
+
+    if (!res.ok) throw new Error("Error al guardar");
+
+    const data = await res.json();
+    
+    // Actualizamos el objeto con el resultado manual
+    item.result = data;
+    
+    // Refrescamos la tarjeta y el resumen
+    updateCard(item);
+    showSummary();
+    
+  } catch (error) {
+    console.error(error);
+    alert("No se pudo guardar la selección manual.");
+  }
 }
 
 function updateCard(item) {
+  // Si no hay resultado o es el fallback manual, no sobreescribimos la tarjeta aún
+  if (!item.result || item.result.manual || item.result.label === 'Pendiente') {
+    return; 
+  }
+
   const { label, slug, confidence, catIndex } = item.result;
   document.getElementById(`card-${item.id}`)?.classList.add('analyzed');
 

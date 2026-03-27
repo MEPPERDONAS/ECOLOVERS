@@ -104,22 +104,83 @@ def save_analysis(username, filename, label, slug, confidence, all_scores):
 
 def compute_user_stats(username):
     user = get_user_by_username(username)
-    if not user: return {'total': 0, 'by_category': []}
+    if not user: 
+        return {'total': 0, 'by_category': [], 'semana': [], 'racha_actual': 0}
+    
     conn = get_db()
-    cur = conn.cursor()
-    cur.execute('SELECT COUNT(*) as total, MIN(created_at) as first_at, MAX(created_at) as last_at FROM analyses WHERE user_id = ?', (user['id'],))
-    res = cur.fetchone()
-    total = res['total'] or 0
-    
-    by_category = []
-    for label, slug in zip(LABELS, GUIDE_SLUGS):
-        cur.execute('SELECT COUNT(*) FROM analyses WHERE user_id = ? AND predicted_label = ?', (user['id'], label))
-        count = cur.fetchone()[0]
-        perc = round((count * 100 / total), 2) if total > 0 else 0
-        by_category.append({'label': label, 'slug': slug, 'count': count, 'percentage': perc})
-    
-    conn.close()
-    return {'total': total, 'by_category': by_category, 'first_at': res['first_at'], 'last_at': res['last_at']}
+    # Esto permite usar res['total'] en lugar de res[0]
+    conn.row_factory = sqlite3.Row 
+    cur = conn.cursor()    
+
+    try:
+        # 1. Datos Generales
+        cur.execute('''SELECT COUNT(*) as total, 
+                              MIN(date(created_at)) as first_at, 
+                              MAX(date(created_at)) as last_at 
+                       FROM analyses WHERE user_id = ?''', (user['id'],))
+        res = cur.fetchone()
+        total = res['total'] or 0
+        hoy = datetime.now(timezone.utc).date()
+
+        # 2. Datos por Categoría
+        by_category = []
+        for label, slug in zip(LABELS, GUIDE_SLUGS):
+            cur.execute('''SELECT COUNT(*) as c, MIN(date(created_at)) as f, MAX(date(created_at)) as l 
+                           FROM analyses WHERE user_id = ? AND predicted_label = ?''', (user['id'], label))
+            row = cur.fetchone()
+            count = row['c'] or 0
+            by_category.append({
+                'label': label, 'slug': slug, 'count': count,
+                'percentage': round((count * 100 / total), 2) if total > 0 else 0,
+                'first_at': row['f'], 'last_at': row['l']
+            })
+
+        # 3. Datos de la Semana
+        lunes = hoy - timedelta(days=hoy.weekday())
+        semana_stats = []
+        for i in range(7):
+            f_dia = lunes + timedelta(days=i)
+            cur.execute('SELECT COUNT(*) FROM analyses WHERE user_id = ? AND date(created_at) = date(?)', 
+                        (user['id'], f_dia.isoformat()))
+            semana_stats.append({
+                'nombre': ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'][i],
+                'activo': cur.fetchone()[0] > 0,
+                'es_hoy': f_dia == hoy
+            })
+
+        # 4. Lógica de Racha
+        racha_actual = 0
+        fecha_evaluar = hoy
+        while True:
+            cur.execute('SELECT COUNT(*) FROM analyses WHERE user_id = ? AND date(created_at) = date(?)', 
+                        (user['id'], fecha_evaluar.isoformat()))
+            if cur.fetchone()[0] > 0:
+                racha_actual += 1
+                fecha_evaluar -= timedelta(days=1)
+            else:
+                if fecha_evaluar == hoy:
+                    ayer = hoy - timedelta(days=1)
+                    cur.execute('SELECT COUNT(*) FROM analyses WHERE user_id = ? AND date(created_at) = date(?)', 
+                                (user['id'], ayer.isoformat()))
+                    if cur.fetchone()[0] > 0:
+                        fecha_evaluar = ayer
+                        continue
+                break
+        
+        return {
+            'total': total, 
+            'by_category': by_category, 
+            'first_at': res['first_at'], 
+            'last_at': res['last_at'],
+            'semana': semana_stats,
+            'racha_actual': int(racha_actual)
+        }
+
+    except Exception as e:
+        print(f"Error en stats: {e}")
+        return {'total': 0, 'by_category': [], 'semana': [], 'racha_actual': 6}
+    finally:
+        conn.close()
 
 def get_user_analyses(username, limit=50):
     user = get_user_by_username(username)
@@ -134,59 +195,6 @@ def get_user_analyses(username, limit=50):
 
 #RACHAS
 
-def compute_user_stats(username):
-    user = get_user_by_username(username)
-    if not user: return {'total': 0, 'by_category': []}
-    
-    conn = get_db()
-    cur = conn.cursor()
-    
-    # 1. Definir 'res' y 'total' (Esto faltaba)
-    cur.execute('''SELECT COUNT(*) as total, 
-                          MIN(created_at) as first_at, 
-                          MAX(created_at) as last_at 
-                   FROM analyses WHERE user_id = ?''', (user['id'],))
-    res = cur.fetchone() #
-    total = res['total'] or 0 #
-    
-    # 2. Definir 'by_category' (Esto también faltaba)
-    by_category = []
-    for label, slug in zip(LABELS, GUIDE_SLUGS):
-        cur.execute('SELECT COUNT(*) FROM analyses WHERE user_id = ? AND predicted_label = ?', (user['id'], label))
-        count = cur.fetchone()[0]
-        perc = round((count * 100 / total), 2) if total > 0 else 0
-        by_category.append({'label': label, 'slug': slug, 'count': count, 'percentage': perc})
-    
-    # 3. Lógica de la racha semanal
-    hoy = datetime.now(timezone.utc).date()
-    lunes = hoy - timedelta(days=hoy.weekday())
-    
-    semana_stats = []
-    nombres_dias = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
-    
-    for i in range(7):
-        fecha_dia = lunes + timedelta(days=i)
-        cur.execute('''SELECT COUNT(*) FROM analyses 
-                       WHERE user_id = ? AND date(created_at) = date(?)''', 
-                    (user['id'], fecha_dia.isoformat()))
-        count = cur.fetchone()[0]
-        
-        semana_stats.append({
-            'nombre': nombres_dias[i],
-            'activo': count > 0,
-            'es_hoy': fecha_dia == hoy
-        })
-    
-    conn.close()
-    
-    # Devolver todo correctamente definido
-    return {
-        'total': total,
-        'by_category': by_category,
-        'first_at': res['first_at'], #
-        'last_at': res['last_at'],   #
-        'semana': semana_stats
-    }
 # --- DECORADORES ---
 
 def login_required(view):
@@ -259,6 +267,35 @@ def predict():
         # Si el error es de modelo no encontrado, intentamos dar una pista
         return jsonify({'error': 'El modelo de IA no está respondiendo. Verifica tu API Key o el nombre del modelo.'}), 500
 
+
+@app.route('/save_manual', methods=['POST'])
+@login_required
+def save_manual():
+    data = request.get_json()
+    label = data.get('label')
+    filename = data.get('filename')
+    
+    if label not in LABELS:
+        return jsonify({'error': 'Categoría inválida'}), 400
+        
+    idx = LABELS.index(label)
+    conf = 100.0  # Al ser manual, la confianza es total
+    
+    all_scores = [{'label': LABELS[i], 'icon': ICONS[i], 'slug': GUIDE_SLUGS[i], 
+                   'probability': 100 if i == idx else 0} for i in range(len(LABELS))]
+
+    # Guardamos en la base de datos usando tu función existente
+    save_analysis(session.get('user'), filename, label, GUIDE_SLUGS[idx], conf, all_scores)
+    
+    return jsonify({
+        'label': label, 
+        'icon': ICONS[idx], 
+        'slug': GUIDE_SLUGS[idx], 
+        'confidence': conf, 
+        'all_scores': all_scores
+    })
+
+
 @app.route('/historial')
 @login_required
 def history():
@@ -267,7 +304,6 @@ def history():
     stats = compute_user_stats(username)
     return render_template('history.html', items=items, stats=stats, user=username)
 
-# --- NUEVA RUTA: REGISTER (Soluciona tu error) ---
 @app.route('/registro', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':

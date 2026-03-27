@@ -10,7 +10,7 @@
 
     <div class="user-info">
       <span> Hola, <strong>{{ user }}</strong></span>
-      <a class="btn btn-ghost btn-history" href="{{ url_for('history') }}">Historial</a>
+      
     </div>
 
     <div class="streak-container">
@@ -20,12 +20,21 @@
         <div class="day-box {% if dia.activo %}active{% endif %} {% if dia.es_hoy %}today{% endif %}">
           <span class="day-name">{{ dia.nombre }}</span>
           <div class="day-dot">
-            {% if dia.activo %}✓{% endif %}
+            {% if dia.activo %}
+              {% include 'icons/seedling.svg' %}
+            {% endif %}
           </div>
         </div>
         {% endfor %}
       </div>
-    </div>
+
+      <div class="streak-badge">
+          <span class="streak-count">
+              {{ stats.get('racha_actual', 0) }} Días
+          </span>
+          <a class="btn-history" href="{{ url_for('history') }}">Historial</a>
+      </div>
+    
 
   </div>
 
@@ -47,7 +56,7 @@
         <div class="details">
           <h4><a class="inline-link" href="{{ url_for('guide', slug=row.slug) }}">{{ row.label }}</a></h4>
           <p class="stats-percent">{{ row.percentage }}%</p>
-          <p class="stats-range">{{ row.first_at or 'Sin registro' }}{% if row.last_at and row.last_at != row.first_at %} -> {{ row.last_at }}{% endif %}</p>
+          <p class="stats-range"><strong>{{ row.last_at or 'Sin registro' }}</strong></p>
         </div>
         <p class="stats-number">{{ row.count }}</p>
 
@@ -116,10 +125,9 @@
 
 <div class="camera-dock" id="camera-dock" hidden>
   <div class="camera-dock-head">
-    <strong>Cara</strong>
     <div class="camera-dock-actions">
       <button class="btn btn-ghost" id="switch-camera" type="button">Cambiar camara</button>
-      <button class="btn btn-ghost" id="close-camera-dock" type="button">Cerrar</button>
+      <button class="btn btn-ghost" id="close-camera-dock" type="button">✖</button>
     </div>
   </div>
   <div class="camera-body">
