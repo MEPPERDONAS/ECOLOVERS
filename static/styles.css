@@ -2,8 +2,8 @@
   --bg: #f9f9f9;
   --surface: #111111;
   --border: #222222;
-  --accent: #ec7d21;
-  --accent2: #141b38;
+  --accent: #3a946c;
+  --accent2: #37c285;
   --text: #000000;
   --muted: #555;
   --card-bg: #d1cfcf;
@@ -12,8 +12,9 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
+
 body {
-  background: var(--bg);
+  background: linear-gradient(to bottom, #c1ffd2, #f5f5f5);
   color: var(--gren);
   font-family: 'area-normal', sans-serif;
   min-height: 100vh;
@@ -23,11 +24,13 @@ body {
 }
 
 
+
+
 .container {
   position: relative;
   z-index: 1;
   width: 100%;
-  max-width: 900px;
+  max-width: 680px;
   padding: 10px 20px;
 }
 
@@ -39,7 +42,7 @@ header {
   display: flex;
   justify-content:flex-end;
   align-items: center;
-  width: 70%;
+  width: 100%;
   box-shadow: #bababa 0px 4px 8px -2px;
 }
 .profileimg{
@@ -83,8 +86,68 @@ h1 span { color: var(--accent); }
   margin-bottom: 12px;
   flex-direction: column;
 }
+/*gamenavegacion*/
+.streak-container {
+    background: white;
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.week-grid {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+}
+
+.day-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.day-name {
+    font-size: 10px;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: bold;
+}
+
+.day-dot {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    background: #f0f0f0; /* Color apagado si no hay actividad */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: transparent;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+/* Estilo cuando hay actividad (Verde Pastel) */
+.day-box.active .day-dot {
+    background: linear-gradient(135deg, #CFFEDC, #A5D6A7);
+    color: #2e7d32;
+    box-shadow: 0 4px 8px rgba(165, 214, 167, 0.4);
+}
+
+/* Marca el día actual */
+.day-box.today .day-dot {
+    border-color: #4CAF50;
+}
+
+.day-box.today .day-name {
+    color: #2e7d32;
+}
+
 /* Drop Zone */
 .drop-zone {
+  display: none;
   border: 1px dashed var(--border);
   border-radius: 4px;
   padding: 10px 40px;
@@ -650,7 +713,11 @@ h1 span { color: var(--accent); }
 .guide-card-danger h3 {
   color: #cc2e2e;
 }
-
+@media (min-width: 1024px) {
+  .drop-zone {
+    display: block;
+  }
+}
 @media (max-width: 720px) {
   .camera-footer {
     flex-direction: column;
@@ -670,6 +737,9 @@ h1 span { color: var(--accent); }
 
   .menu-principal{
     flex-direction: column;
+  }
+  .stats-number{
+    display: grid;
   }
 }
 
@@ -707,7 +777,6 @@ footer {
 }
 .menu-principal article {
   background: var(--accent2);
-  border: 1px solid var(--border);
   border-radius: 14px;
   padding: 12px 20px;
   transition: all 0.2s;
@@ -744,7 +813,7 @@ footer {
   padding: 10px;
   border-radius: 999px;
   box-shadow: #bababa 0px 4px 8px -2px;
-  backdrop-filter: blur(5px);
+  background-color: white;
   z-index: 90;
 }
 
@@ -769,7 +838,7 @@ footer {
 }
 
 .island-side {
-  color: var(--gren);
+  color: var(--accent);
 }
 
 .island-side:hover {
@@ -941,7 +1010,7 @@ main {
   transition: all 0.3s ease-in-out; /* Controla la velocidad aquí */
   pointer-events: none;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
   gap: 10px;
   margin-top: 12px;
 }
@@ -951,12 +1020,13 @@ main {
   max-height: 500px;
   pointer-events: auto;
   margin-top: 10px;
+  margin-bottom: 10px;
 }
 
 .stats-card {
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: #fefefe;
+  background: linear-gradient(to top, #c1ffd2, #f5f5f5);
   padding: 10px;
   display: flex;
   flex-direction: row;
@@ -966,6 +1036,8 @@ main {
   flex-direction: column;
   gap: 4px;
   flex-grow: 1;
+  height: 100%;
+  justify-content: space-between;
 }
 
 .stats-card h4 {
@@ -978,7 +1050,7 @@ main {
   font-weight: 700;
   color: var(--accent2);
   align-items: center;
-  display: grid;
+  display: none;
   opacity: 0.5;
   margin-right: 10px;
 }
@@ -1021,7 +1093,7 @@ main {
 
 .stats-panel-detail {
   margin-bottom: 20px;
-  max-width: 340px;
+  /*max-width: 340px;*/
 }
 
 .stats-table-wrap {

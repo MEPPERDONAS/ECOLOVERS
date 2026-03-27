@@ -384,13 +384,15 @@ botonDetalles.addEventListener('click', () => {
 
   if (!estaActivo) {
     statsGrid.classList.add('active');
-    // Le decimos al navegador exactamente cuántos píxeles mide el contenido
     statsGrid.style.maxHeight = statsGrid.scrollHeight + "px";
     statsGrid.style.opacity = "1";
+    botonDetalles.innerText = "Ver menos";
+
   } else {
     statsGrid.classList.remove('active');
     statsGrid.style.maxHeight = "0";
     statsGrid.style.opacity = "0";
+    botonDetalles.innerText = "Ver más";
   }
 });
 
