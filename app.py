@@ -6,7 +6,9 @@ import logging
 from datetime import datetime, timezone
 from functools import wraps
 from datetime import timedelta
-
+from flask_mail import Mail, Message
+import random
+import string
 from dotenv import load_dotenv
 import numpy as np
 from flask import Flask, request, jsonify, render_template, redirect, url_for, session
@@ -34,6 +36,14 @@ genai_client = genai.Client(api_key=GOOGLE_API_KEY)
 app = Flask(__name__, root_path=BASE_DIR)
 CORS(app)
 app.secret_key = os.getenv('SECRET_KEY', 'dev-secret-change-me')
+
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
+app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_USERNAME')
+mail = Mail(app)
 
 # Rutas de Archivos
 DB_PATH = os.path.join(BASE_DIR, 'ecolovers.db')
@@ -69,6 +79,7 @@ def init_db():
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT UNIQUE NOT NULL,
         password_hash TEXT NOT NULL,
+        email TEXT,
         created_at TEXT NOT NULL)''')
     cur.execute('''CREATE TABLE IF NOT EXISTS analyses (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -80,6 +91,21 @@ def init_db():
         all_scores_json TEXT NOT NULL,
         created_at TEXT NOT NULL,
         FOREIGN KEY(user_id) REFERENCES users(id))''')
+    cur.execute('''CREATE TABLE IF NOT EXISTS reset_codes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        code TEXT NOT NULL,
+        expires_at TEXT NOT NULL,
+        used INTEGER DEFAULT 0,
+        FOREIGN KEY(user_id) REFERENCES users(id))''')
+    
+    # Migraciones: agregar columnas nuevas si no existen
+    try:
+        cur.execute('ALTER TABLE users ADD COLUMN email TEXT')
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass  # La columna ya existe
+
     conn.commit()
     conn.close()
 
@@ -309,19 +335,99 @@ def register():
     if request.method == 'POST':
         username = request.form.get('username').strip()
         password = request.form.get('password')
-        
+        email = request.form.get('email', '').strip()
+
         if get_user_by_username(username):
             return render_template('register.html', error="El usuario ya existe")
-        
+
         conn = get_db()
         cur = conn.cursor()
-        cur.execute('INSERT INTO users (username, password_hash, created_at) VALUES (?, ?, ?)',
-                    (username, generate_password_hash(password), datetime.now(timezone.utc).isoformat()))
+        cur.execute('INSERT INTO users (username, password_hash, email, created_at) VALUES (?, ?, ?, ?)',
+                    (username, generate_password_hash(password), email, datetime.now(timezone.utc).isoformat()))
         conn.commit()
         conn.close()
         return redirect(url_for('login'))
-    
+
     return render_template('register.html')
+
+@app.route('/olvide-password', methods=['GET', 'POST'])
+def forgot_password():
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip()
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute('SELECT id, email FROM users WHERE username = ?', (username,))
+        user = cur.fetchone()
+        conn.close()
+
+        if not user or not user['email']:
+            return render_template('forgot_password.html', error="Usuario no encontrado o sin email registrado.")
+
+        # Generar código de 6 dígitos
+        code = ''.join(random.choices(string.digits, k=6))
+        expires_at = (datetime.now(timezone.utc) + timedelta(minutes=15)).isoformat()
+
+        conn = get_db()
+        cur = conn.cursor()
+        # Invalidar códigos anteriores
+        cur.execute('UPDATE reset_codes SET used=1 WHERE user_id=?', (user['id'],))
+        cur.execute('INSERT INTO reset_codes (user_id, code, expires_at) VALUES (?, ?, ?)',
+                    (user['id'], code, expires_at))
+        conn.commit()
+        conn.close()
+
+        try:
+            msg = Message(
+                subject='Código de recuperación - Ecolovers',
+                recipients=[user['email']],
+                body=f'Tu código de recuperación es: {code}\n\nExpira en 15 minutos.'
+            )
+            mail.send(msg)
+        except Exception as e:
+            log.error(f"Error enviando email: {e}")
+            return render_template('forgot_password.html', error="No se pudo enviar el email. Intenta más tarde.")
+
+        return redirect(url_for('reset_password', username=username))
+
+    return render_template('forgot_password.html')
+
+
+@app.route('/restablecer-password', methods=['GET', 'POST'])
+def reset_password():
+    username = request.args.get('username') or request.form.get('username')
+
+    if request.method == 'POST':
+        code = request.form.get('code', '').strip()
+        new_password = request.form.get('new_password')
+
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute('SELECT id FROM users WHERE username = ?', (username,))
+        user = cur.fetchone()
+
+        if not user:
+            conn.close()
+            return render_template('reset_password.html', username=username, error="Usuario no válido.")
+
+        now = datetime.now(timezone.utc).isoformat()
+        cur.execute('''SELECT id FROM reset_codes 
+                       WHERE user_id=? AND code=? AND used=0 AND expires_at > ?''',
+                    (user['id'], code, now))
+        valid = cur.fetchone()
+
+        if not valid:
+            conn.close()
+            return render_template('reset_password.html', username=username, error="Código inválido o expirado.")
+
+        cur.execute('UPDATE users SET password_hash=? WHERE id=?',
+                    (generate_password_hash(new_password), user['id']))
+        cur.execute('UPDATE reset_codes SET used=1 WHERE id=?', (valid['id'],))
+        conn.commit()
+        conn.close()
+
+        return redirect(url_for('login'))
+
+    return render_template('reset_password.html', username=username)
 
 @app.route('/guia/<slug>')
 @login_required

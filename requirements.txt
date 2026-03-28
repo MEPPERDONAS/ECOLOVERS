@@ -5,3 +5,5 @@ numpy
 werkzeug
 google-genai
 gunicorn
+flask-mail
+psycopg2-binary

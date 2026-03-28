@@ -33,6 +33,26 @@ body {
   max-width: 680px;
   padding: 10px 20px;
 }
+.container-auth {
+    justify-content: center;
+    justify-items: center;
+    display: grid;
+    gap: 20px;
+}
+.container-auth a {
+  text-align: center;
+}
+
+.container-auth input {
+    color: #f5f5dc;
+    border: 1px solid var(--border);
+    padding: 10px 12px;
+    font-family: 'area-normal', sans-serif;
+    font-size: 12px;
+    border-radius: 20px;
+    background-color: var(--accent2);
+    min-width: 100%;
+}
 
 header {
   text-align: center;
