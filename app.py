@@ -207,7 +207,13 @@ def get_user_analyses(username, limit=50):
     return [{'id': r['id'], 'filename': r['filename'], 'label': r['predicted_label'], 'slug': r['predicted_slug'],
              'confidence': r['confidence'], 'all_scores': json.loads(r['all_scores_json']), 'created_at': r['created_at']} for r in rows]
 
-
+def get_user_by_email(email):
+    conn = get_db()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cur.execute('SELECT id, username, password_hash, email FROM users WHERE email = %s', (email,))
+    row = cur.fetchone()
+    conn.close()
+    return row
 #RACHAS
 
 # --- DECORADORES ---
@@ -329,6 +335,9 @@ def register():
         if get_user_by_username(username):
             return render_template('register.html', error="El usuario ya existe")
 
+        if get_user_by_email(email):
+            return render_template('register.html', error="Este correo ya está registrado")
+
         conn = get_db()
         cur = conn.cursor()
         cur.execute('INSERT INTO users (username, password_hash, email, created_at) VALUES (%s, %s, %s, %s)',
@@ -342,15 +351,15 @@ def register():
 @app.route('/olvide-password', methods=['GET', 'POST'])
 def forgot_password():
     if request.method == 'POST':
-        username = request.form.get('username', '').strip()
+        email = request.form.get('email', '').strip()
         conn = get_db()
-        cur = conn.cursor()
-        cur.execute('SELECT id, email FROM users WHERE username = %s', (username,))
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute('SELECT id, username, email FROM users WHERE email = %s', (email,))
         user = cur.fetchone()
         conn.close()
 
-        if not user or not user['email']:
-            return render_template('forgot_password.html', error="Usuario no encontrado o sin email registrado.")
+        if not user:
+            return render_template('forgot_password.html', error="No existe una cuenta con ese correo.")
 
         # Generar código de 6 dígitos
         code = ''.join(random.choices(string.digits, k=6))
@@ -358,7 +367,6 @@ def forgot_password():
 
         conn = get_db()
         cur = conn.cursor()
-        # Invalidar códigos anteriores
         cur.execute('UPDATE reset_codes SET used=1 WHERE user_id=%s', (user['id'],))
         cur.execute('INSERT INTO reset_codes (user_id, code, expires_at) VALUES (%s, %s, %s)',
                     (user['id'], code, expires_at))
@@ -369,14 +377,20 @@ def forgot_password():
             msg = Message(
                 subject='Código de recuperación - Ecolovers',
                 recipients=[user['email']],
-                body=f'Tu código de recuperación es: {code}\n\nExpira en 15 minutos.'
+                body=(
+                    f'Hola, recibiste este correo porque solicitaste restablecer tu contraseña.\n\n'
+                    f'Tu usuario es: {user["username"]}\n'
+                    f'Tu código de recuperación es: {code}\n\n'
+                    f'Expira en 15 minutos.\n\n'
+                    f'Si no solicitaste esto, ignora este mensaje.'
+                )
             )
             mail.send(msg)
         except Exception as e:
             log.error(f"Error enviando email: {e}")
             return render_template('forgot_password.html', error="No se pudo enviar el email. Intenta más tarde.")
 
-        return redirect(url_for('reset_password', username=username))
+        return redirect(url_for('reset_password', username=user['username']))
 
     return render_template('forgot_password.html')
 
@@ -390,7 +404,7 @@ def reset_password():
         new_password = request.form.get('new_password')
 
         conn = get_db()
-        cur = conn.cursor()
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute('SELECT id FROM users WHERE username = %s', (username,))
         user = cur.fetchone()
 
@@ -443,14 +457,19 @@ def tips():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        user, pwd = request.form.get('username'), request.form.get('password')
-        if user == APP_USERNAME and pwd == APP_PASSWORD:
-            session['user'] = user
+        identifier, pwd = request.form.get('identifier'), request.form.get('password')
+
+        # Admin por variables de entorno
+        if identifier == APP_USERNAME and pwd == APP_PASSWORD:
+            session['user'] = identifier
             return redirect(url_for('index'))
-        u = get_user_by_username(user)
+
+        # Intenta por email, si no encuentra intenta por username
+        u = get_user_by_email(identifier) or get_user_by_username(identifier)
         if u and check_password_hash(u['password_hash'], pwd):
-            session['user'] = user
+            session['user'] = u['username']
             return redirect(url_for('index'))
+
         return render_template('login.html', error="Credenciales incorrectas")
     return render_template('login.html')
 
