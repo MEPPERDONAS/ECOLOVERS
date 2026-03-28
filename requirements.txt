@@ -4,3 +4,4 @@ python-dotenv
 numpy
 werkzeug
 google-genai
+gunicorn
