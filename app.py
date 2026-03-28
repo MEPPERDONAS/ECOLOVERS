@@ -1,7 +1,8 @@
 ﻿import os
 import io
 import json
-import sqlite3
+import psycopg2
+import psycopg2.extras
 import logging
 from datetime import datetime, timezone
 from functools import wraps
@@ -20,6 +21,7 @@ from google import genai
 
 # Cargar variables de entorno 
 load_dotenv()
+print("DATABASE_URL:", os.getenv('DATABASE_URL')) 
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -46,7 +48,13 @@ app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_USERNAME')
 mail = Mail(app)
 
 # Rutas de Archivos
-DB_PATH = os.path.join(BASE_DIR, 'ecolovers.db')
+DATABASE_URL = os.getenv('DATABASE_URL')
+
+def get_db():
+    conn = psycopg2.connect(DATABASE_URL)
+    conn.autocommit = False
+    return conn
+
 GUIDES_PATH = os.path.join(BASE_DIR, 'guides.json')
 
 # Configuración de Etiquetas
@@ -67,52 +75,38 @@ else:
 
 # --- FUNCIONES DE BASE DE DATOS ---
 
-def get_db():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
 
 def init_db():
     conn = get_db()
     cur = conn.cursor()
     cur.execute('''CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id SERIAL PRIMARY KEY,
         username TEXT UNIQUE NOT NULL,
         password_hash TEXT NOT NULL,
         email TEXT,
         created_at TEXT NOT NULL)''')
     cur.execute('''CREATE TABLE IF NOT EXISTS analyses (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id),
         filename TEXT,
         predicted_label TEXT NOT NULL,
         predicted_slug TEXT NOT NULL,
         confidence REAL NOT NULL,
         all_scores_json TEXT NOT NULL,
-        created_at TEXT NOT NULL,
-        FOREIGN KEY(user_id) REFERENCES users(id))''')
+        created_at TEXT NOT NULL)''')
     cur.execute('''CREATE TABLE IF NOT EXISTS reset_codes (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id),
         code TEXT NOT NULL,
         expires_at TEXT NOT NULL,
-        used INTEGER DEFAULT 0,
-        FOREIGN KEY(user_id) REFERENCES users(id))''')
-    
-    # Migraciones: agregar columnas nuevas si no existen
-    try:
-        cur.execute('ALTER TABLE users ADD COLUMN email TEXT')
-        conn.commit()
-    except sqlite3.OperationalError:
-        pass  # La columna ya existe
-
+        used INTEGER DEFAULT 0)''')
     conn.commit()
     conn.close()
 
 def get_user_by_username(username):
     conn = get_db()
-    cur = conn.cursor()
-    cur.execute('SELECT id, username, password_hash FROM users WHERE username = ?', (username,))
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cur.execute('SELECT id, username, password_hash, email FROM users WHERE username = %s', (username,))
     row = cur.fetchone()
     conn.close()
     return row
@@ -123,36 +117,32 @@ def save_analysis(username, filename, label, slug, confidence, all_scores):
     conn = get_db()
     cur = conn.cursor()
     cur.execute('''INSERT INTO analyses (user_id, filename, predicted_label, predicted_slug, confidence, all_scores_json, created_at)
-                   VALUES (?, ?, ?, ?, ?, ?, ?)''',
+                   VALUES (%s, %s, %s, %s, %s, %s, %s)''',
                 (user['id'], filename, label, slug, float(confidence), json.dumps(all_scores, ensure_ascii=False), datetime.now(timezone.utc).isoformat()))
     conn.commit()
     conn.close()
 
 def compute_user_stats(username):
     user = get_user_by_username(username)
-    if not user: 
+    if not user:
         return {'total': 0, 'by_category': [], 'semana': [], 'racha_actual': 0}
-    
+
     conn = get_db()
-    # Esto permite usar res['total'] en lugar de res[0]
-    conn.row_factory = sqlite3.Row 
-    cur = conn.cursor()    
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
     try:
-        # 1. Datos Generales
-        cur.execute('''SELECT COUNT(*) as total, 
-                              MIN(date(created_at)) as first_at, 
-                              MAX(date(created_at)) as last_at 
-                       FROM analyses WHERE user_id = ?''', (user['id'],))
+        cur.execute('''SELECT COUNT(*) as total,
+                              MIN(DATE(created_at)) as first_at,
+                              MAX(DATE(created_at)) as last_at
+                       FROM analyses WHERE user_id = %s''', (user['id'],))
         res = cur.fetchone()
         total = res['total'] or 0
         hoy = datetime.now(timezone.utc).date()
 
-        # 2. Datos por Categoría
         by_category = []
         for label, slug in zip(LABELS, GUIDE_SLUGS):
-            cur.execute('''SELECT COUNT(*) as c, MIN(date(created_at)) as f, MAX(date(created_at)) as l 
-                           FROM analyses WHERE user_id = ? AND predicted_label = ?''', (user['id'], label))
+            cur.execute('''SELECT COUNT(*) as c, MIN(DATE(created_at)) as f, MAX(DATE(created_at)) as l
+                           FROM analyses WHERE user_id = %s AND predicted_label = %s''', (user['id'], label))
             row = cur.fetchone()
             count = row['c'] or 0
             by_category.append({
@@ -161,42 +151,40 @@ def compute_user_stats(username):
                 'first_at': row['f'], 'last_at': row['l']
             })
 
-        # 3. Datos de la Semana
         lunes = hoy - timedelta(days=hoy.weekday())
         semana_stats = []
         for i in range(7):
             f_dia = lunes + timedelta(days=i)
-            cur.execute('SELECT COUNT(*) FROM analyses WHERE user_id = ? AND date(created_at) = date(?)', 
+            cur.execute('SELECT COUNT(*) as c FROM analyses WHERE user_id = %s AND DATE(created_at) = %s',
                         (user['id'], f_dia.isoformat()))
             semana_stats.append({
                 'nombre': ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'][i],
-                'activo': cur.fetchone()[0] > 0,
+                'activo': cur.fetchone()['c'] > 0,
                 'es_hoy': f_dia == hoy
             })
 
-        # 4. Lógica de Racha
         racha_actual = 0
         fecha_evaluar = hoy
         while True:
-            cur.execute('SELECT COUNT(*) FROM analyses WHERE user_id = ? AND date(created_at) = date(?)', 
+            cur.execute('SELECT COUNT(*) as c FROM analyses WHERE user_id = %s AND DATE(created_at) = %s',
                         (user['id'], fecha_evaluar.isoformat()))
-            if cur.fetchone()[0] > 0:
+            if cur.fetchone()['c'] > 0:
                 racha_actual += 1
                 fecha_evaluar -= timedelta(days=1)
             else:
                 if fecha_evaluar == hoy:
                     ayer = hoy - timedelta(days=1)
-                    cur.execute('SELECT COUNT(*) FROM analyses WHERE user_id = ? AND date(created_at) = date(?)', 
+                    cur.execute('SELECT COUNT(*) as c FROM analyses WHERE user_id = %s AND DATE(created_at) = %s',
                                 (user['id'], ayer.isoformat()))
-                    if cur.fetchone()[0] > 0:
+                    if cur.fetchone()['c'] > 0:
                         fecha_evaluar = ayer
                         continue
                 break
-        
+
         return {
-            'total': total, 
-            'by_category': by_category, 
-            'first_at': res['first_at'], 
+            'total': total,
+            'by_category': by_category,
+            'first_at': res['first_at'],
             'last_at': res['last_at'],
             'semana': semana_stats,
             'racha_actual': int(racha_actual)
@@ -204,7 +192,7 @@ def compute_user_stats(username):
 
     except Exception as e:
         print(f"Error en stats: {e}")
-        return {'total': 0, 'by_category': [], 'semana': [], 'racha_actual': 6}
+        return {'total': 0, 'by_category': [], 'semana': [], 'racha_actual': 0}
     finally:
         conn.close()
 
@@ -212,12 +200,13 @@ def get_user_analyses(username, limit=50):
     user = get_user_by_username(username)
     if not user: return []
     conn = get_db()
-    cur = conn.cursor()
-    cur.execute('SELECT * FROM analyses WHERE user_id = ? ORDER BY id DESC LIMIT ?', (user['id'], limit))
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cur.execute('SELECT * FROM analyses WHERE user_id = %s ORDER BY id DESC LIMIT %s', (user['id'], limit))
     rows = cur.fetchall()
     conn.close()
-    return [{'id': r['id'], 'filename': r['filename'], 'label': r['predicted_label'], 'slug': r['predicted_slug'], 
+    return [{'id': r['id'], 'filename': r['filename'], 'label': r['predicted_label'], 'slug': r['predicted_slug'],
              'confidence': r['confidence'], 'all_scores': json.loads(r['all_scores_json']), 'created_at': r['created_at']} for r in rows]
+
 
 #RACHAS
 
@@ -342,7 +331,7 @@ def register():
 
         conn = get_db()
         cur = conn.cursor()
-        cur.execute('INSERT INTO users (username, password_hash, email, created_at) VALUES (?, ?, ?, ?)',
+        cur.execute('INSERT INTO users (username, password_hash, email, created_at) VALUES (%s, %s, %s, %s)',
                     (username, generate_password_hash(password), email, datetime.now(timezone.utc).isoformat()))
         conn.commit()
         conn.close()
@@ -356,7 +345,7 @@ def forgot_password():
         username = request.form.get('username', '').strip()
         conn = get_db()
         cur = conn.cursor()
-        cur.execute('SELECT id, email FROM users WHERE username = ?', (username,))
+        cur.execute('SELECT id, email FROM users WHERE username = %s', (username,))
         user = cur.fetchone()
         conn.close()
 
@@ -370,8 +359,8 @@ def forgot_password():
         conn = get_db()
         cur = conn.cursor()
         # Invalidar códigos anteriores
-        cur.execute('UPDATE reset_codes SET used=1 WHERE user_id=?', (user['id'],))
-        cur.execute('INSERT INTO reset_codes (user_id, code, expires_at) VALUES (?, ?, ?)',
+        cur.execute('UPDATE reset_codes SET used=1 WHERE user_id=%s', (user['id'],))
+        cur.execute('INSERT INTO reset_codes (user_id, code, expires_at) VALUES (%s, %s, %s)',
                     (user['id'], code, expires_at))
         conn.commit()
         conn.close()
@@ -402,7 +391,7 @@ def reset_password():
 
         conn = get_db()
         cur = conn.cursor()
-        cur.execute('SELECT id FROM users WHERE username = ?', (username,))
+        cur.execute('SELECT id FROM users WHERE username = %s', (username,))
         user = cur.fetchone()
 
         if not user:
@@ -411,7 +400,7 @@ def reset_password():
 
         now = datetime.now(timezone.utc).isoformat()
         cur.execute('''SELECT id FROM reset_codes 
-                       WHERE user_id=? AND code=? AND used=0 AND expires_at > ?''',
+                       WHERE user_id=%s AND code=%s AND used=0 AND expires_at > %s''',
                     (user['id'], code, now))
         valid = cur.fetchone()
 
@@ -419,9 +408,9 @@ def reset_password():
             conn.close()
             return render_template('reset_password.html', username=username, error="Código inválido o expirado.")
 
-        cur.execute('UPDATE users SET password_hash=? WHERE id=?',
+        cur.execute('UPDATE users SET password_hash=%s WHERE id=%s',
                     (generate_password_hash(new_password), user['id']))
-        cur.execute('UPDATE reset_codes SET used=1 WHERE id=?', (valid['id'],))
+        cur.execute('UPDATE reset_codes SET used=1 WHERE id=%s', (valid['id'],))
         conn.commit()
         conn.close()
 
