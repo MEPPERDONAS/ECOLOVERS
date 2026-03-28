@@ -160,7 +160,6 @@ h1 span { color: var(--accent); }
 
 /* Estilo cuando hay actividad (Verde Pastel) */
 .day-box.active .day-dot {
-    background: linear-gradient(135deg, #CFFEDC, #A5D6A7);
     color: #2e7d32;
     box-shadow: 0 4px 8px rgba(165, 214, 167, 0.4);
 }
@@ -726,6 +725,8 @@ h1 span { color: var(--accent); }
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 16px;
+  animation: aparecer 0.8s ease-out forwards;
+  animation-delay: 0.2s;
 }
 
 .guide-card h3 {
@@ -860,6 +861,8 @@ footer {
   letter-spacing: 0.4px;
   cursor: pointer;
   transition: all 0.15s ease-in;
+  animation: aparecer 0.8s ease-out forwards;
+  animation-delay: 0.4s;
 }
 
 .island-btn:hover {
@@ -1165,3 +1168,24 @@ main {
   opacity: 0.55;
   cursor: not-allowed;
 }
+/*animacion de entrada*/
+@keyframes aparecer {
+  from {
+    opacity: 0;
+    transform: translateY(20px); /* Aparece desde 20px abajo */
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);    /* Llega a su posición original */
+  }
+}
+
+/* Clase para aplicar a los contenedores */
+.container-animado {
+  opacity: 0; /* Empieza invisible */
+  animation: aparecer 0.8s ease-out forwards;
+}
+
+/* Opcional: Retraso para que no aparezcan todos al mismo tiempo */
+.retraso-1 { animation-delay: 0.2s; }
+.retraso-2 { animation-delay: 0.4s; }
