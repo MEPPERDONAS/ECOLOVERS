@@ -137,6 +137,7 @@ def compute_user_stats(username):
     cached = cache.get(cache_key)
     if cached:
         return cached
+
     user = get_user_by_username(username)
     if not user:
         return {'total': 0, 'by_category': [], 'semana': [], 'racha_actual': 0}
@@ -145,55 +146,63 @@ def compute_user_stats(username):
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
     try:
+        hoy = datetime.now(timezone.utc).date()
+        lunes = hoy - timedelta(days=hoy.weekday())
+
+        # QUERY 1: totales generales
         cur.execute('''SELECT COUNT(*) as total,
                               MIN(DATE(created_at)) as first_at,
                               MAX(DATE(created_at)) as last_at
                        FROM analyses WHERE user_id = %s''', (user['id'],))
         res = cur.fetchone()
         total = res['total'] or 0
-        hoy = datetime.now(timezone.utc).date()
+
+        # QUERY 2: conteos por categoría en una sola query
+        cur.execute('''SELECT predicted_label, COUNT(*) as c,
+                              MIN(DATE(created_at)) as f,
+                              MAX(DATE(created_at)) as l
+                       FROM analyses WHERE user_id = %s
+                       GROUP BY predicted_label''', (user['id'],))
+        counts_raw = {r['predicted_label']: r for r in cur.fetchall()}
 
         by_category = []
         for label, slug in zip(LABELS, GUIDE_SLUGS):
-            cur.execute('''SELECT COUNT(*) as c, MIN(DATE(created_at)) as f, MAX(DATE(created_at)) as l
-                           FROM analyses WHERE user_id = %s AND predicted_label = %s''', (user['id'], label))
-            row = cur.fetchone()
-            count = row['c'] or 0
+            row = counts_raw.get(label, {})
+            count = row.get('c', 0)
             by_category.append({
                 'label': label, 'slug': slug, 'count': count,
                 'percentage': round((count * 100 / total), 2) if total > 0 else 0,
-                'first_at': row['f'], 'last_at': row['l']
+                'first_at': row.get('f'), 'last_at': row.get('l')
             })
 
-        lunes = hoy - timedelta(days=hoy.weekday())
+        # QUERY 3: días activos (semana + racha) en una sola query
+
+        cur.execute('''SELECT DISTINCT DATE(created_at) as dia
+                       FROM analyses
+                       WHERE user_id = %s AND DATE(created_at) >= %s
+                       ORDER BY dia DESC''',
+                    (user['id'], (hoy - timedelta(days=60)).isoformat()))
+        dias_activos = {r['dia'] for r in cur.fetchall()}
+
+        # Semana actual
         semana_stats = []
+        nombres = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
         for i in range(7):
             f_dia = lunes + timedelta(days=i)
-            cur.execute('SELECT COUNT(*) as c FROM analyses WHERE user_id = %s AND DATE(created_at) = %s',
-                        (user['id'], f_dia.isoformat()))
             semana_stats.append({
-                'nombre': ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'][i],
-                'activo': cur.fetchone()['c'] > 0,
+                'nombre': nombres[i],
+                'activo': f_dia in dias_activos,
                 'es_hoy': f_dia == hoy
             })
 
+        # Racha (usando el set de días activos, sin más queries)
         racha_actual = 0
         fecha_evaluar = hoy
-        while True:
-            cur.execute('SELECT COUNT(*) as c FROM analyses WHERE user_id = %s AND DATE(created_at) = %s',
-                        (user['id'], fecha_evaluar.isoformat()))
-            if cur.fetchone()['c'] > 0:
-                racha_actual += 1
-                fecha_evaluar -= timedelta(days=1)
-            else:
-                if fecha_evaluar == hoy:
-                    ayer = hoy - timedelta(days=1)
-                    cur.execute('SELECT COUNT(*) as c FROM analyses WHERE user_id = %s AND DATE(created_at) = %s',
-                                (user['id'], ayer.isoformat()))
-                    if cur.fetchone()['c'] > 0:
-                        fecha_evaluar = ayer
-                        continue
-                break
+        if fecha_evaluar not in dias_activos:
+            fecha_evaluar = hoy - timedelta(days=1)
+        while fecha_evaluar in dias_activos:
+            racha_actual += 1
+            fecha_evaluar -= timedelta(days=1)
 
         result = {
             'total': total,
