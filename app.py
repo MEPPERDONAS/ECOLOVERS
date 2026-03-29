@@ -1,5 +1,4 @@
 ﻿import os
-import io
 import json
 import psycopg2
 import psycopg2.extras
@@ -11,17 +10,17 @@ from flask_mail import Mail, Message
 import random
 import string
 from dotenv import load_dotenv
-import numpy as np
 from flask import Flask, request, jsonify, render_template, redirect, url_for, session
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_cors import CORS
+from flask_caching import Cache
+from psycopg2 import pool
 
 # --- IA: GEMINI (nuevo SDK google-genai) ---
 from google import genai
 
 # Cargar variables de entorno 
 load_dotenv()
-print("DATABASE_URL:", os.getenv('DATABASE_URL')) 
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -47,13 +46,20 @@ app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
 app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_USERNAME')
 mail = Mail(app)
 
+#cachacito para mejorar rendimiento en stats y consultas frecuentes
+app.config['CACHE_TYPE'] = 'SimpleCache'  # memoria local del proceso
+app.config['CACHE_DEFAULT_TIMEOUT'] = 120  # 2 minutos
+cache = Cache(app)
 # Rutas de Archivos
 DATABASE_URL = os.getenv('DATABASE_URL')
 
+connection_pool = pool.SimpleConnectionPool(1, 10, DATABASE_URL)
+
 def get_db():
-    conn = psycopg2.connect(DATABASE_URL)
-    conn.autocommit = False
-    return conn
+    return connection_pool.getconn()
+
+def release_db(conn):
+    connection_pool.putconn(conn)
 
 GUIDES_PATH = os.path.join(BASE_DIR, 'guides.json')
 
@@ -101,14 +107,14 @@ def init_db():
         expires_at TEXT NOT NULL,
         used INTEGER DEFAULT 0)''')
     conn.commit()
-    conn.close()
+    release_db(conn)
 
 def get_user_by_username(username):
     conn = get_db()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     cur.execute('SELECT id, username, password_hash, email FROM users WHERE username = %s', (username,))
     row = cur.fetchone()
-    conn.close()
+    release_db(conn)
     return row
 
 def save_analysis(username, filename, label, slug, confidence, all_scores):
@@ -120,9 +126,17 @@ def save_analysis(username, filename, label, slug, confidence, all_scores):
                    VALUES (%s, %s, %s, %s, %s, %s, %s)''',
                 (user['id'], filename, label, slug, float(confidence), json.dumps(all_scores, ensure_ascii=False), datetime.now(timezone.utc).isoformat()))
     conn.commit()
-    conn.close()
+    release_db(conn)
+
+    cache.delete(f'stats_{username}')
+    cache.delete(f'analyses_{username}_50')
+    cache.delete(f'analyses_{username}_100')
 
 def compute_user_stats(username):
+    cache_key = f'stats_{username}'
+    cached = cache.get(cache_key)
+    if cached:
+        return cached
     user = get_user_by_username(username)
     if not user:
         return {'total': 0, 'by_category': [], 'semana': [], 'racha_actual': 0}
@@ -181,7 +195,7 @@ def compute_user_stats(username):
                         continue
                 break
 
-        return {
+        result = {
             'total': total,
             'by_category': by_category,
             'first_at': res['first_at'],
@@ -189,30 +203,39 @@ def compute_user_stats(username):
             'semana': semana_stats,
             'racha_actual': int(racha_actual)
         }
+        cache.set(cache_key, result, timeout=120)
+        return result
 
     except Exception as e:
         print(f"Error en stats: {e}")
         return {'total': 0, 'by_category': [], 'semana': [], 'racha_actual': 0}
     finally:
-        conn.close()
+        release_db(conn)
 
 def get_user_analyses(username, limit=50):
+    cache_key = f'analyses_{username}_{limit}'
+    cached = cache.get(cache_key)
+    if cached:
+        return cached
+    
     user = get_user_by_username(username)
     if not user: return []
     conn = get_db()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     cur.execute('SELECT * FROM analyses WHERE user_id = %s ORDER BY id DESC LIMIT %s', (user['id'], limit))
     rows = cur.fetchall()
-    conn.close()
-    return [{'id': r['id'], 'filename': r['filename'], 'label': r['predicted_label'], 'slug': r['predicted_slug'],
-             'confidence': r['confidence'], 'all_scores': json.loads(r['all_scores_json']), 'created_at': r['created_at']} for r in rows]
+    release_db(conn)
+    result = [{'id': r['id'], 'filename': r['filename'], 'label': r['predicted_label'], 'slug': r['predicted_slug'],
+               'confidence': r['confidence'], 'all_scores': json.loads(r['all_scores_json']), 'created_at': r['created_at']} for r in rows]
+    cache.set(cache_key, result, timeout=120)
+    return result
 
 def get_user_by_email(email):
     conn = get_db()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     cur.execute('SELECT id, username, password_hash, email FROM users WHERE email = %s', (email,))
     row = cur.fetchone()
-    conn.close()
+    release_db(conn)
     return row
 #RACHAS
 
@@ -343,7 +366,7 @@ def register():
         cur.execute('INSERT INTO users (username, password_hash, email, created_at) VALUES (%s, %s, %s, %s)',
                     (username, generate_password_hash(password), email, datetime.now(timezone.utc).isoformat()))
         conn.commit()
-        conn.close()
+        release_db(conn)
         return redirect(url_for('login'))
 
     return render_template('register.html')
@@ -356,7 +379,7 @@ def forgot_password():
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute('SELECT id, username, email FROM users WHERE email = %s', (email,))
         user = cur.fetchone()
-        conn.close()
+        release_db(conn)
 
         if not user:
             return render_template('forgot_password.html', error="No existe una cuenta con ese correo.")
@@ -371,7 +394,7 @@ def forgot_password():
         cur.execute('INSERT INTO reset_codes (user_id, code, expires_at) VALUES (%s, %s, %s)',
                     (user['id'], code, expires_at))
         conn.commit()
-        conn.close()
+        release_db(conn)
 
         try:
             msg = Message(
@@ -409,7 +432,7 @@ def reset_password():
         user = cur.fetchone()
 
         if not user:
-            conn.close()
+            release_db(conn)
             return render_template('reset_password.html', username=username, error="Usuario no válido.")
 
         now = datetime.now(timezone.utc).isoformat()
@@ -419,14 +442,14 @@ def reset_password():
         valid = cur.fetchone()
 
         if not valid:
-            conn.close()
+            release_db(conn)
             return render_template('reset_password.html', username=username, error="Código inválido o expirado.")
 
         cur.execute('UPDATE users SET password_hash=%s WHERE id=%s',
                     (generate_password_hash(new_password), user['id']))
         cur.execute('UPDATE reset_codes SET used=1 WHERE id=%s', (valid['id'],))
         conn.commit()
-        conn.close()
+        release_db(conn)
 
         return redirect(url_for('login'))
 

@@ -7,3 +7,4 @@ google-genai
 gunicorn
 flask-mail
 psycopg2-binary
+flask-caching

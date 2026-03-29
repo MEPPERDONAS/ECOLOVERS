@@ -38,10 +38,6 @@
 
   </div>
 
-  <div class="nav-container">
-    <span class="model-info"><span class="accent-dot"></span> {{ labels|join(' · ') }}</span>
-  </div>
-
   <section class="stats-panel">
     <div class="stats-head">
       <h3>Datos Generales de Analisis</h3>
@@ -80,6 +76,10 @@
     </div>
   </section>
 
+  <div class="nav-container">
+    <span class="model-info"><span class="accent-dot"></span> {{ labels|join(' · ') }}</span>
+  </div>
+
   <div class="drop-zone" id="drop-zone">
     <span class="drop-icon">♻️</span>
     <h2>Arrastra tus imágenes aquí</h2>
@@ -93,7 +93,7 @@
 
   <div class="batch-header" id="batch-header" style="display:none">
     <h3>Cola de imágenes &nbsp;<span id="img-count" style="color:var(--accent)">0</span></h3>
-    <button class="btn btn-ghost" onclick="clearAll()">Limpiar todo</button>
+    <button onclick="clearAll()">Limpiar todo</button>
   </div>
 
   <div class="image-grid" id="image-grid"></div>
@@ -117,10 +117,6 @@
     <div class="summary-grid" id="summary-grid"></div>
   </div>
 
-  <div class="export-area" id="export-area">
-    <button class="btn btn-primary" onclick="exportCSV()">↓ Exportar CSV</button>
-    <button class="btn btn-ghost" onclick="exportJSON()">↓ Exportar JSON</button>
-  </div>
 </div>
 
 <div class="camera-dock" id="camera-dock" hidden>
