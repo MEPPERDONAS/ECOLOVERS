@@ -7,11 +7,17 @@
   <div class="guide-header">
     <div>
       <h2>Guia de manejo: {{ guide.title }}</h2>
-      <p class="guide-bin"><strong>Depositar en:</strong> {{ guide.bin }}</p>
+      
     </div>
     <a class="btn btn-ghost" href="{{ url_for('index') }}">Volver</a>
   </div>
-
+  
+<div class="guide-image">
+    <img src="/static/img/guides/{{ slug }}.jpg" 
+        alt="{{ guide.title }}"
+        onerror="this.src='/static/img/guides/{{ slug }}.webp'">
+    <p class="guide-bin"><strong>Depositar en:</strong> {{ guide.bin }}</p>
+</div>
   <div class="guide-grid">
     <section class="guide-card">
       <h3>Que si hacer</h3>
