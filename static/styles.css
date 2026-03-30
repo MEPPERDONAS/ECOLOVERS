@@ -326,6 +326,8 @@ h1 span { color: var(--accent); }
 }
 .btn-cls{
   border:none;
+  padding: 0px;
+  margin-top: 5px;
 }
 
 .btn-primary { border-color: var(--accent); color: var(--accent); 
@@ -1242,7 +1244,7 @@ main {
 
 .header {
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
     padding: 10px 20px;
 }
 
@@ -1310,4 +1312,8 @@ main {
   100% {
     box-shadow: 0 0 5px var(--accent);
 }
+  }
+  .header-img {
+    width: 25px;
+    height: auto;
   }

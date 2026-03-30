@@ -10,22 +10,27 @@
 
 <body>
 <header class="header">
-    <div class="profile-menu">
-        <img 
-            src="{{ url_for('static', filename='profile2.jpg') }}" 
-            alt="Profile" 
-            class="profile-img"
-            onclick="toggleMenu()"
-        >
+    <div>
+        <img class="header-img" src="{{ url_for('static', filename='profile2.jpg') }}" alt="Profile">
+    </div>
 
-        <div id="dropdownMenu" class="dropdown-menu">
-            <a href="/perfil"><span>👤</span> Perfil</a>
-            <a href="/historial"><span>⚙️</span> Configuración</a>
-            <hr>
-            <a href="{{ url_for('logout') }}" class="logout">
-                <span>{% include 'icons/logout-2.svg' %}</span>
-                Cerrar sesión
-            </a>
+    <div>
+        <div class="profile-menu">
+            <div class="menu-icon" onclick="toggleMenu()">
+                {% include 'icons/menu-2.svg' %}
+            </div>
+
+            <div id="dropdownMenu" class="dropdown-menu">
+                <a href="/perfil">{% include 'icons/user.svg' %}
+                    Perfil</a>
+                <a href="/historial">{% include 'icons/settings.svg' %}
+                    Configuración</a>
+                <hr>
+                <a href="{{ url_for('logout') }}" class="logout">
+                    {% include 'icons/logout-2.svg' %}
+                    Cerrar sesión
+                </a>
+            </div>
         </div>
     </div>
 </header>
@@ -67,7 +72,7 @@ function toggleMenu() {
 
 window.addEventListener("click", function(e) {
     const menu = document.getElementById("dropdownMenu");
-    const profile = document.querySelector(".profile-img");
+    const profile = document.querySelector(".menu-icon");
 
     if (!profile.contains(e.target) && !menu.contains(e.target)) {
         menu.style.display = "none";
