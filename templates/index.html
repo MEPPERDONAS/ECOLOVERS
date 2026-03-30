@@ -7,6 +7,7 @@
 <div class="container">
   <div class="header-logo">
     <img src="{{ url_for('static', filename='LOGO.PNG') }}" alt="ecoloverlogo">
+  </div>
 
     <div class="user-info">
       <span> Hola, <strong>{{ user }}</strong></span>
@@ -122,8 +123,7 @@
 <div class="camera-dock" id="camera-dock" hidden>
   <div class="camera-dock-head">
     <div class="camera-dock-actions">
-      <button class="btn btn-ghost" id="switch-camera" type="button">Cambiar camara</button>
-      <button class="btn btn-ghost" id="close-camera-dock" type="button">✖</button>
+      <button class="btn btn-ghost btn-cls" id="close-camera-dock" type="button">✖</button>
     </div>
   </div>
   <div class="camera-body">

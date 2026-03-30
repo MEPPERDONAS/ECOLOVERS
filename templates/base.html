@@ -9,12 +9,26 @@
 </head>
 
 <body>
-    <header>
-        <div class="profileimg">
-            <img src="{{ url_for('static', filename='profileicon.png') }}" alt="Profileimg">
+<header class="header">
+    <div class="profile-menu">
+        <img 
+            src="{{ url_for('static', filename='profile2.jpg') }}" 
+            alt="Profile" 
+            class="profile-img"
+            onclick="toggleMenu()"
+        >
+
+        <div id="dropdownMenu" class="dropdown-menu">
+            <a href="/perfil"><span>👤</span> Perfil</a>
+            <a href="/historial"><span>⚙️</span> Configuración</a>
+            <hr>
+            <a href="{{ url_for('logout') }}" class="logout">
+                <span>{% include 'icons/logout-2.svg' %}</span>
+                Cerrar sesión
+            </a>
         </div>
-        <a class="btn btn-ghost btn-logout" href="{{ url_for('logout') }}">{% include 'icons/logout-2.svg' %}</a>
-    </header>
+    </div>
+</header>
     {% block content %}{% endblock %}
 
     <nav class="floating-island" aria-label="Accesos rapidos">
@@ -45,5 +59,19 @@
 
 </body>
 
+<script>
+function toggleMenu() {
+    const menu = document.getElementById("dropdownMenu");
+    menu.style.display = menu.style.display === "flex" ? "none" : "flex";
+}
 
+window.addEventListener("click", function(e) {
+    const menu = document.getElementById("dropdownMenu");
+    const profile = document.querySelector(".profile-img");
+
+    if (!profile.contains(e.target) && !menu.contains(e.target)) {
+        menu.style.display = "none";
+    }
+});
+</script>
 </html>

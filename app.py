@@ -486,6 +486,11 @@ def tips():
     tips_list = [{'slug': s, 'title': GUIDES[s]['title'], 'tips': GUIDES[s]['tips']} for s in GUIDE_SLUGS if s in GUIDES]
     return render_template('tips.html', tips_by_category=tips_list, user=session.get('user'))
 
+@app.route('/perfil')
+@login_required
+def perfil():
+    return render_template('profile.html', user=session.get('user'))
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
