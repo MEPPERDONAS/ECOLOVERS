@@ -37,6 +37,7 @@ genai_client = genai.Client(api_key=GOOGLE_API_KEY)
 app = Flask(__name__, root_path=BASE_DIR)
 CORS(app)
 app.secret_key = os.getenv('SECRET_KEY', 'dev-secret-change-me')
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
@@ -498,12 +499,14 @@ def login():
 
         # Admin por variables de entorno
         if identifier == APP_USERNAME and pwd == APP_PASSWORD:
+            session.permanent = True 
             session['user'] = identifier
             return redirect(url_for('index'))
 
         # Intenta por email, si no encuentra intenta por username
         u = get_user_by_email(identifier) or get_user_by_username(identifier)
         if u and check_password_hash(u['password_hash'], pwd):
+            session.permanent = True
             session['user'] = u['username']
             return redirect(url_for('index'))
 
