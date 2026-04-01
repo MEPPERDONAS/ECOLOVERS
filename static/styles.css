@@ -1398,3 +1398,36 @@ main {
   font-size: 0.85rem;
   margin-bottom: 0.8rem;
 }
+
+.guide-nav-tabs {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.guide-tab {
+  padding: 0.4rem 1rem;
+  border-radius: 2rem;
+  border: 1px solid var(--border, #e2e8f0);
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.85rem;
+  opacity: 0.6;
+  transition: all 0.2s;
+}
+
+.guide-tab.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+  opacity: 1;
+}
+
+.guide-panel {
+  display: none;
+}
+
+.guide-panel.active {
+  display: block;
+}

@@ -469,7 +469,12 @@ def reset_password():
 def guide(slug):
     guide_data = GUIDES.get(slug)
     if not guide_data: return redirect(url_for('index'))
-    return render_template('guide.html', guide=guide_data, slug=slug, user=session.get('user'))
+    return render_template('guide.html', 
+                           guide=guide_data, 
+                           slug=slug, 
+                           all_guides=GUIDES,
+                           guide_slugs=GUIDE_SLUGS,
+                           user=session.get('user'))
 
 @app.route('/lugares')
 @login_required

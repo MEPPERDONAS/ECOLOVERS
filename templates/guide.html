@@ -1,50 +1,80 @@
 {% extends "base.html" %}
 
-{% block title %}Guia - {{ guide.title }}{% endblock %}
+{% block title %}Guía - {{ guide.title }}{% endblock %}
 
 {% block content %}
 <div class="container">
-  <div class="guide-header">
-    <div>
-      <h2> {{ guide.title }}</h2>
-      
+
+  <!-- Navegación entre guías -->
+  <div class="guide-nav-tabs">
+    {% for s in guide_slugs %}
+      {% set g = all_guides[s] %}
+      <button class="guide-tab {% if s == slug %}active{% endif %}"
+              onclick="switchGuide('{{ s }}')">
+        {{ g.title }}
+      </button>
+    {% endfor %}
+
+
+
+
+
+  <!-- Contenido dinámico -->
+  {% for s in guide_slugs %}
+    {% set g = all_guides[s] %}
+    <div class="guide-panel {% if s == slug %}active{% endif %}" id="panel-{{ s }}">
+      <div class="guide-header">
+        <h2>{{ g.title }}</h2>
+      </div>
+      <div class="guide-image">
+        <img src="/static/img/guides/{{ s }}.jpg"
+             alt="{{ g.title }}"
+             onerror="this.src='/static/img/guides/{{ s }}.webp'">
+        <p class="guide-bin"><strong>Depositar en:</strong> {{ g.bin }}</p>
+      </div>
+
+      <div class="guide-grid">
+        <section class="guide-card">
+          <h3>Qué sí hacer</h3>
+          <ul>
+            {% for item in g.how_to %}
+              <li>{{ item }}</li>
+            {% endfor %}
+          </ul>
+        </section>
+
+        <section class="guide-card">
+          <h3>Tips</h3>
+          <ul>
+            {% for item in g.tips %}
+              <li>{{ item }}</li>
+            {% endfor %}
+          </ul>
+        </section>
+
+        <section class="guide-card guide-card-danger">
+          <h3>Cómo NO reciclar</h3>
+          <ul>
+            {% for item in g.dont %}
+              <li>{{ item }}</li>
+            {% endfor %}
+          </ul>
+        </section>
+      </div>
+
     </div>
+  {% endfor %}
 
-  </div>
-  
-<div class="guide-image">
-    <img src="/static/img/guides/{{ slug }}.jpg" 
-        alt="{{ guide.title }}"
-        onerror="this.src='/static/img/guides/{{ slug }}.webp'">
-    <p class="guide-bin"><strong>Depositar en:</strong> {{ guide.bin }}</p>
 </div>
-  <div class="guide-grid">
-    <section class="guide-card">
-      <h3>Que si hacer</h3>
-      <ul>
-        {% for item in guide.how_to %}
-          <li>{{ item }}</li>
-        {% endfor %}
-      </ul>
-    </section>
 
-    <section class="guide-card">
-      <h3>Tips</h3>
-      <ul>
-        {% for item in guide.tips %}
-          <li>{{ item }}</li>
-        {% endfor %}
-      </ul>
-    </section>
-
-    <section class="guide-card guide-card-danger">
-      <h3>Como NO reciclar</h3>
-      <ul>
-        {% for item in guide.dont %}
-          <li>{{ item }}</li>
-        {% endfor %}
-      </ul>
-    </section>
-  </div>
-</div>
+<script>
+function switchGuide(slug) {
+  document.querySelectorAll('.guide-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.guide-header').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.guide-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-' + slug).classList.add('active');
+  document.querySelector(`[onclick="switchGuide('${slug}')"]`).classList.add('active');
+  history.replaceState(null, '', '/guia/' + slug);
+}
+</script>
 {% endblock %}
