@@ -4,12 +4,12 @@
 
 {% block content %}
 <div class="container">
-
   <div class="profile-card">
 
-    <div class="profile-avatar">
-      <img src="{{ url_for('static', filename='profile2.jpg') }}" alt="avatar">
+    <div class="profile-avatar avatar-{{ stats.avatar_id }}">
+        <button class="btn-change-avatar" id="open-avatar-modal">✏️</button>
     </div>
+    
 
     <div class="profile-info">
       <h2>{{ user_data.username }}</h2>
@@ -32,7 +32,31 @@
     </div>
 
     <div class="profile-divider"></div>
+    </div>
 
+    <!-- Modal -->
+    <div class="avatar-modal-overlay" id="avatar-modal-overlay">
+    <div class="avatar-modal">
+        <button class="avatar-modal-close" id="close-avatar-modal">✕</button>
+        <h3>Elige tu avatar</h3>
+
+        <div class="avatar-grid">
+        {% for i in range(1, 13) %}
+            <div class="avatar-option avatar-{{ i }} {% if stats.avatar_id == i %}selected{% endif %}"
+                data-id="{{ i }}"></div>
+        {% endfor %}
+        </div>
+
+        <form method="POST" id="avatar-form">
+        <input type="hidden" name="form_type" value="avatar">
+        <input type="hidden" name="avatar_id" id="avatar-id-input" value="{{ stats.avatar_id }}">
+        <button class="btn btn-primary" type="submit" style="width:100%">Guardar</button>
+        </form>
+    </div>
+    </div>
+
+
+    <!-- CAMBIO DE CONTRASEÑA -->
     <div class="profile-password-section">
       <h3>Cambiar contraseña</h3>
 
@@ -44,6 +68,7 @@
       {% endif %}
 
       <form method="POST">
+        <input type="hidden" name="form_type" value="password">
         <div class="profile-field">
           <label>Contraseña actual</label>
           <input type="password" name="current_password" placeholder="••••••••" required>
@@ -61,6 +86,32 @@
     </div>
 
   </div>
-
 </div>
+
+<script>
+  const overlay    = document.getElementById('avatar-modal-overlay');
+  const btnOpen    = document.getElementById('open-avatar-modal');
+  const btnClose   = document.getElementById('close-avatar-modal');
+  const input      = document.getElementById('avatar-id-input');
+  const preview    = document.getElementById('profile-avatar-preview');
+  const options    = document.querySelectorAll('.avatar-option');
+
+  // Abrir / cerrar
+  btnOpen.addEventListener('click', () => overlay.classList.add('open'));
+  btnClose.addEventListener('click', () => overlay.classList.remove('open'));
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.remove('open');   // clic fuera cierra
+  });
+
+  // Selección de avatar
+  options.forEach(opt => {
+    opt.addEventListener('click', () => {
+      options.forEach(o => o.classList.remove('selected'));
+      opt.classList.add('selected');
+      const id = opt.dataset.id;
+      input.value = id;
+      preview.className = `profile-avatar avatar-${id}`;   // preview en tiempo real
+    });
+  });
+</script>
 {% endblock %}

@@ -10,9 +10,7 @@
 
 <body>
 <header class="header">
-    <div>
-        <img class="header-img" src="{{ url_for('static', filename='profile2.jpg') }}" alt="Profile">
-    </div>
+    <div class="header-img avatar-{{ stats.avatar_id }}"></div>
     <div><strong>
     {% set page_names = {
         'index': 'Inicio',

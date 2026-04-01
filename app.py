@@ -112,7 +112,7 @@ def init_db():
 def get_user_by_username(username):
     conn = get_db()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    cur.execute('SELECT id, username, password_hash, email FROM users WHERE username = %s', (username,))
+    cur.execute('SELECT id, username, password_hash, email, avatar_id FROM users WHERE username = %s', (username,))
     row = cur.fetchone()
     release_db(conn)
     return row
@@ -133,12 +133,13 @@ def save_analysis(username, filename, label, slug, confidence, all_scores):
     cache.delete(f'analyses_{username}_100')
 
 def compute_user_stats(username):
-    cache_key = f'stats_{username}'
+    user = get_user_by_username(username)
+    cache_key = f'stats_{username}_avatar_{user.get("avatar_id",1)}'
     cached = cache.get(cache_key)
     if cached:
         return cached
 
-    user = get_user_by_username(username)
+    
     if not user:
         return {'total': 0, 'by_category': [], 'semana': [], 'racha_actual': 0}
 
@@ -210,7 +211,8 @@ def compute_user_stats(username):
             'first_at': res['first_at'],
             'last_at': res['last_at'],
             'semana': semana_stats,
-            'racha_actual': int(racha_actual)
+            'racha_actual': int(racha_actual),
+            'avatar_id': user.get('avatar_id', 1)
         }
         cache.set(cache_key, result, timeout=120)
         return result
@@ -467,6 +469,9 @@ def reset_password():
 @app.route('/guia/<slug>')
 @login_required
 def guide(slug):
+    username = session.get('user')
+    stats = compute_user_stats(username)
+
     guide_data = GUIDES.get(slug)
     if not guide_data: return redirect(url_for('index'))
     return render_template('guide.html', 
@@ -474,22 +479,27 @@ def guide(slug):
                            slug=slug, 
                            all_guides=GUIDES,
                            guide_slugs=GUIDE_SLUGS,
-                           user=session.get('user'))
+                           user=session.get('user'),
+                           stats=stats)
 
 @app.route('/lugares')
 @login_required
 def places():
+    username = session.get('user')
+    stats = compute_user_stats(username)
     places_data = [
         {'name': 'Punto Limpio Municipal', 'desc': 'Recibe todo tipo de reciclables.', 'hours': '8:00 - 17:00'},
         {'name': 'Centro de Acopio Barrio', 'desc': 'Papel y plástico seco.', 'hours': '9:00 - 16:00'}
     ]
-    return render_template('places.html', places=places_data, user=session.get('user'))
+    return render_template('places.html', places=places_data, user=session.get('user'), stats=stats)
 
 @app.route('/tips')
 @login_required
 def tips():
+    username = session.get('user')
+    stats = compute_user_stats(username)
     tips_list = [{'slug': s, 'title': GUIDES[s]['title'], 'tips': GUIDES[s]['tips']} for s in GUIDE_SLUGS if s in GUIDES]
-    return render_template('tips.html', tips_by_category=tips_list, user=session.get('user'))
+    return render_template('tips.html', tips_by_category=tips_list, user=session.get('user'), stats=stats)
 
 @app.route('/perfil', methods=['GET', 'POST'])
 @login_required
@@ -499,28 +509,59 @@ def perfil():
     stats = compute_user_stats(username)
 
     if request.method == 'POST':
-        current_pwd = request.form.get('current_password')
-        new_pwd = request.form.get('new_password')
-        confirm_pwd = request.form.get('confirm_password')
+        form_type = request.form.get('form_type')
 
-        if not check_password_hash(user_data['password_hash'], current_pwd):
-            return render_template('profile.html', user=username, user_data=user_data, stats=stats,
-                                   error="La contraseña actual es incorrecta.")
-        if new_pwd != confirm_pwd:
-            return render_template('profile.html', user=username, user_data=user_data, stats=stats,
-                                   error="Las contraseñas nuevas no coinciden.")
-        if len(new_pwd) < 6:
-            return render_template('profile.html', user=username, user_data=user_data, stats=stats,
-                                   error="La contraseña debe tener al menos 6 caracteres.")
+        # ── Cambio de avatar ──────────────────────────────────────
+        if form_type == 'avatar':
+            try:
+                avatar_id = int(request.form.get('avatar_id', 1))
+                if not 1 <= avatar_id <= 12:
+                    raise ValueError
+            except ValueError:
+                return render_template('profile.html', user=username,
+                                       user_data=user_data, stats=stats,
+                                       error="Avatar inválido.")
 
-        conn = get_db()
-        cur = conn.cursor()
-        cur.execute('UPDATE users SET password_hash=%s WHERE username=%s',
-                    (generate_password_hash(new_pwd), username))
-        conn.commit()
-        conn.close()
-        return render_template('profile.html', user=username, user_data=user_data, stats=stats,
-                               success="Contraseña actualizada correctamente.")
+            conn = get_db()
+            cur = conn.cursor()
+            cur.execute('UPDATE users SET avatar_id=%s WHERE username=%s',
+                        (avatar_id, username))
+            conn.commit()
+            conn.close()
+
+            stats['avatar_id'] = avatar_id          # refleja el cambio sin recargar
+            return render_template('profile.html', user=username,
+                                   user_data=user_data, stats=stats,
+                                   success="Avatar actualizado.")
+
+        # ── Cambio de contraseña ──────────────────────────────────
+        if form_type == 'password':
+            current_pwd = request.form.get('current_password')
+            new_pwd     = request.form.get('new_password')
+            confirm_pwd = request.form.get('confirm_password')
+
+            if not check_password_hash(user_data['password_hash'], current_pwd):
+                return render_template('profile.html', user=username,
+                                       user_data=user_data, stats=stats,
+                                       error="La contraseña actual es incorrecta.")
+            if new_pwd != confirm_pwd:
+                return render_template('profile.html', user=username,
+                                       user_data=user_data, stats=stats,
+                                       error="Las contraseñas nuevas no coinciden.")
+            if len(new_pwd) < 6:
+                return render_template('profile.html', user=username,
+                                       user_data=user_data, stats=stats,
+                                       error="La contraseña debe tener al menos 6 caracteres.")
+
+            conn = get_db()
+            cur = conn.cursor()
+            cur.execute('UPDATE users SET password_hash=%s WHERE username=%s',
+                        (generate_password_hash(new_pwd), username))
+            conn.commit()
+            conn.close()
+            return render_template('profile.html', user=username,
+                                   user_data=user_data, stats=stats,
+                                   success="Contraseña actualizada correctamente.")
 
     return render_template('profile.html', user=username, user_data=user_data, stats=stats)
 
