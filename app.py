@@ -82,7 +82,6 @@ else:
 
 # --- FUNCIONES DE BASE DE DATOS ---
 
-
 def init_db():
     conn = get_db()
     cur = conn.cursor()
@@ -487,10 +486,38 @@ def tips():
     tips_list = [{'slug': s, 'title': GUIDES[s]['title'], 'tips': GUIDES[s]['tips']} for s in GUIDE_SLUGS if s in GUIDES]
     return render_template('tips.html', tips_by_category=tips_list, user=session.get('user'))
 
-@app.route('/perfil')
+@app.route('/perfil', methods=['GET', 'POST'])
 @login_required
 def perfil():
-    return render_template('profile.html', user=session.get('user'))
+    username = session.get('user')
+    user_data = get_user_by_username(username)
+    stats = compute_user_stats(username)
+
+    if request.method == 'POST':
+        current_pwd = request.form.get('current_password')
+        new_pwd = request.form.get('new_password')
+        confirm_pwd = request.form.get('confirm_password')
+
+        if not check_password_hash(user_data['password_hash'], current_pwd):
+            return render_template('profile.html', user=username, user_data=user_data, stats=stats,
+                                   error="La contraseña actual es incorrecta.")
+        if new_pwd != confirm_pwd:
+            return render_template('profile.html', user=username, user_data=user_data, stats=stats,
+                                   error="Las contraseñas nuevas no coinciden.")
+        if len(new_pwd) < 6:
+            return render_template('profile.html', user=username, user_data=user_data, stats=stats,
+                                   error="La contraseña debe tener al menos 6 caracteres.")
+
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute('UPDATE users SET password_hash=%s WHERE username=%s',
+                    (generate_password_hash(new_pwd), username))
+        conn.commit()
+        conn.close()
+        return render_template('profile.html', user=username, user_data=user_data, stats=stats,
+                               success="Contraseña actualizada correctamente.")
+
+    return render_template('profile.html', user=username, user_data=user_data, stats=stats)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():

@@ -13,6 +13,17 @@
     <div>
         <img class="header-img" src="{{ url_for('static', filename='profile2.jpg') }}" alt="Profile">
     </div>
+    <div><strong>
+    {% set page_names = {
+        'index': 'Inicio',
+        'history': 'Historial',
+        'tips': 'Tips',
+        'places': 'Lugares',
+        'perfil': 'Perfil',
+        'guide': 'Guía'
+    } %}
+    {{ page_names.get(request.endpoint, 'Inicio') }}</strong>
+</div>
 
     <div>
         <div class="profile-menu">

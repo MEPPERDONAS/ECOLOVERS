@@ -3,9 +3,64 @@
 {% block title %}Perfil{% endblock %}
 
 {% block content %}
-<body>
-    <h1>perfil</h1>
-    <span> Hola, <strong>{{ user }}</strong></span>
-</body>
+<div class="container">
 
+  <div class="profile-card">
+
+    <div class="profile-avatar">
+      <img src="{{ url_for('static', filename='profile2.jpg') }}" alt="avatar">
+    </div>
+
+    <div class="profile-info">
+      <h2>{{ user_data.username }}</h2>
+      <p class="profile-email">{{ user_data.email or 'Sin email registrado' }}</p>
+    </div>
+
+    <div class="profile-stats">
+      <div class="profile-stat-item">
+        <span class="profile-stat-number">{{ stats.total }}</span>
+        <span class="profile-stat-label">Análisis</span>
+      </div>
+      <div class="profile-stat-item">
+        <span class="profile-stat-number">{{ stats.racha_actual }}</span>
+        <span class="profile-stat-label">Días de racha</span>
+      </div>
+      <div class="profile-stat-item">
+        <span class="profile-stat-number">{{ stats.by_category | selectattr('count', 'gt', 0) | list | length }}</span>
+        <span class="profile-stat-label">Categorías</span>
+      </div>
+    </div>
+
+    <div class="profile-divider"></div>
+
+    <div class="profile-password-section">
+      <h3>Cambiar contraseña</h3>
+
+      {% if error %}
+        <p class="profile-error">{{ error }}</p>
+      {% endif %}
+      {% if success %}
+        <p class="profile-success">{{ success }}</p>
+      {% endif %}
+
+      <form method="POST">
+        <div class="profile-field">
+          <label>Contraseña actual</label>
+          <input type="password" name="current_password" placeholder="••••••••" required>
+        </div>
+        <div class="profile-field">
+          <label>Nueva contraseña</label>
+          <input type="password" name="new_password" placeholder="••••••••" required>
+        </div>
+        <div class="profile-field">
+          <label>Confirmar nueva contraseña</label>
+          <input type="password" name="confirm_password" placeholder="••••••••" required>
+        </div>
+        <button class="btn btn-primary" type="submit">Actualizar contraseña</button>
+      </form>
+    </div>
+
+  </div>
+
+</div>
 {% endblock %}
