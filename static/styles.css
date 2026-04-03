@@ -1488,13 +1488,14 @@ main {
 
 /* Caja del modal */
 .avatar-modal {
-  background: var(--color-card, #1e1e2e);
+  background: var(--bg, #fff);
   border-radius: 16px;
   padding: 28px 24px;
   width: 320px;
   max-width: 90vw;
   box-shadow: 0 8px 32px rgba(0,0,0,0.4);
   position: relative;
+  justify-items: center;
 }
 .avatar-modal h3 {
   margin: 0 0 18px;
@@ -1539,9 +1540,7 @@ main {
 }
 .avatar-option:hover {
   transform: scale(1.1);
-  border-color: var(--color-primary, #6c63ff);
 }
 .avatar-option.selected {
-  border-color: var(--color-primary, #6c63ff);
   box-shadow: 0 0 0 2px var(--color-primary, #6c63ff);
 }
