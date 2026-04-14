@@ -12,7 +12,7 @@
     <div class="user-info">
       <span> Hola, <strong>{{ user }}</strong></span>
       <a class="btn trivia-btn" href="/trivia">
-            jugar trivia
+            trivia
       </a>
     </div>
 
@@ -55,7 +55,7 @@
         <div class="details">
           <h4><a class="inline-link" href="{{ url_for('guide', slug=row.slug) }}">{{ row.label }}</a></h4>
           <p class="stats-percent">{{ row.percentage }}%</p>
-          <p class="stats-range"><strong>{{ row.last_at or 'Sin registro' }}</strong></p>
+          <p class="stats-range">{{ row.last_at or 'Sin registro' }}</p>
         </div>
         <p class="stats-number">{{ row.count }}</p>
 

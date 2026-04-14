@@ -1,5 +1,7 @@
-﻿:root {
-  --bg: #f9f9f9;
+﻿@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap');
+
+:root {
+  --bg: #f4f2ec;
   --surface: #111111;
   --border: #222222;
   --accent: #3a946c;
@@ -8,15 +10,21 @@
   --muted: #555;
   --card-bg: #d1cfcf;
   --gren: #3a946c;
+  --sans: 'DM Sans', sans-serif;
+  --radius: 10px;
+  --radius-lg: 16px;
+  --border: rgba(60,55,40,0.12);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 
 body {
-  background: linear-gradient(to top, #c1ffd2, #f5f5f5);
+  /*background: linear-gradient(to top, #c1ffd2, #f5f5f5);*/
+  background: var(--bg);
   color: var(--gren);
-  font-family: 'area-normal', sans-serif;
+  /*font-family: 'area-normal', sans-serif;*/
+  font-family: var(--sans);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -31,7 +39,7 @@ body {
   z-index: 1;
   width: 100%;
   max-width: 680px;
-  padding: 10px 20px;
+  padding: 10px 0.8rem;
 }
 .container-auth {
     justify-content: center;
@@ -139,9 +147,10 @@ h1 span { color: var(--accent); }
     margin-top: 30px;
     background: white;
     padding: 15px;
-    border-radius: 12px;
     margin-bottom: 20px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg);
 }
 
 .week-grid {
@@ -1053,7 +1062,7 @@ main {
 
 .stats-panel {
   /*border: 1px solid var(--border);*/
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   background: #fff;
   padding: 16px;
   margin-bottom: 18px;
