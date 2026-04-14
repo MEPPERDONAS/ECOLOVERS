@@ -501,6 +501,13 @@ def tips():
     tips_list = [{'slug': s, 'title': GUIDES[s]['title'], 'tips': GUIDES[s]['tips']} for s in GUIDE_SLUGS if s in GUIDES]
     return render_template('tips.html', tips_by_category=tips_list, user=session.get('user'), stats=stats)
 
+@app.route('/trivia')
+def trivia():
+    username = session.get('user')
+    stats = compute_user_stats(username)
+    return render_template('trivia.html', user=session.get('user'), stats=stats)
+
+
 @app.route('/perfil', methods=['GET', 'POST'])
 @login_required
 def perfil():

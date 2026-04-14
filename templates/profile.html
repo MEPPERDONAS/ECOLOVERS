@@ -36,23 +36,23 @@
 
     <!-- Modal -->
     <div class="avatar-modal-overlay" id="avatar-modal-overlay">
-    <div class="avatar-modal">
-        <button class="avatar-modal-close" id="close-avatar-modal">✕</button>
-        <h3>Elige tu avatar</h3>
+      <div class="avatar-modal">
+          <button class="avatar-modal-close" id="close-avatar-modal">✕</button>
+          <h3>Elige tu avatar</h3>
 
-        <div class="avatar-grid">
-        {% for i in range(1, 13) %}
-            <div class="avatar-option avatar-{{ i }} {% if stats.avatar_id == i %}selected{% endif %}"
-                data-id="{{ i }}"></div>
-        {% endfor %}
-        </div>
+          <div class="avatar-grid">
+          {% for i in range(1, 13) %}
+              <div class="avatar-option avatar-{{ i }} {% if stats.avatar_id == i %}selected{% endif %}"
+                  data-id="{{ i }}"></div>
+          {% endfor %}
+          </div>
 
-        <form method="POST" id="avatar-form">
-        <input type="hidden" name="form_type" value="avatar">
-        <input type="hidden" name="avatar_id" id="avatar-id-input" value="{{ stats.avatar_id }}">
-        <button class="btn btn-primary" type="submit" style="width:100%">Guardar</button>
-        </form>
-    </div>
+          <form method="POST" id="avatar-form">
+          <input type="hidden" name="form_type" value="avatar">
+          <input type="hidden" name="avatar_id" id="avatar-id-input" value="{{ stats.avatar_id }}">
+          <button class="btn btn-primary" type="submit" style="width:100%">Guardar</button>
+          </form>
+      </div>
     </div>
 
 

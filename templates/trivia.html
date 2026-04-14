@@ -1,0 +1,727 @@
+{% extends "base.html" %}
+
+{% block title %}trivia{% endblock %}
+
+{% block content %}
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f4f2ec;
+    --surface: #faf9f6;
+    --card: #ffffff;
+    --border: rgba(60,55,40,0.12);
+    --border-strong: rgba(60,55,40,0.22);
+    --text: #1e1d18;
+    --muted: #6b6960;
+    --hint: #a09e97;
+    --green: #2d6a4f;
+    --green-light: #e8f5ee;
+    --green-mid: #52b788;
+    --amber: #b5620a;
+    --amber-light: #fef3e2;
+    --red: #9b2226;
+    --red-light: #fde8e8;
+    --accent: #3b5323;
+    --mono: 'DM Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+    --radius: 10px;
+    --radius-lg: 16px;
+  }
+
+  body {
+    background: var(--bg);
+    font-family: var(--sans);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    
+  }
+
+  .game-wrap {
+    width: 100%;
+    max-width: 640px;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+  }
+  .logo {
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .logo span {
+    display: inline-block;
+    width: 8px; height: 8px;
+    background: var(--green-mid);
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+
+  /* HUD */
+  .hud {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 1.5rem;
+  }
+  .hud-card {
+    background: var(--card);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .hud-label {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--hint);
+  }
+  .hud-value {
+    font-family: var(--mono);
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--text);
+    line-height: 1;
+  }
+  .hud-value.timer-warn { color: var(--amber); }
+  .hud-value.timer-danger { color: var(--red); }
+
+  /* Progress bar */
+  .progress-wrap {
+    background: var(--border);
+    border-radius: 99px;
+    height: 3px;
+    margin-bottom: 1.75rem;
+    overflow: hidden;
+  }
+  .progress-bar {
+    height: 100%;
+    background: var(--green-mid);
+    border-radius: 99px;
+    transition: width 0.4s ease;
+  }
+
+  /* Question card */
+  .q-card {
+    background: var(--card);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.75rem;
+    margin-bottom: 1rem;
+  }
+  .q-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 1rem;
+  }
+  .q-badge {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    padding: 3px 10px;
+    border-radius: 99px;
+    text-transform: uppercase;
+  }
+  .badge-easy   { background: var(--green-light); color: var(--green); }
+  .badge-medium { background: var(--amber-light); color: var(--amber); }
+  .badge-hard   { background: var(--red-light);   color: var(--red); }
+
+  .q-num {
+    font-size: 12px;
+    color: var(--hint);
+    font-family: var(--mono);
+    margin-left: auto;
+  }
+  .q-text {
+    font-size: 17px;
+    font-weight: 400;
+    line-height: 1.55;
+    color: var(--text);
+  }
+
+  /* Options */
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 1rem;
+  }
+  .opt {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 13px 16px;
+    font-size: 14px;
+    color: var(--text);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: border-color 0.15s, background 0.15s, transform 0.1s;
+    text-align: left;
+    width: 100%;
+    font-family: var(--sans);
+  }
+  .opt:hover:not(:disabled) {
+    border-color: var(--border-strong);
+    background: var(--card);
+    transform: translateY(-1px);
+  }
+  .opt:active:not(:disabled) { transform: scale(0.99); }
+  .opt .opt-letter {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    width: 22px; height: 22px;
+    border-radius: 6px;
+    background: var(--bg);
+    border: 0.5px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    color: var(--muted);
+    transition: background 0.15s, color 0.15s;
+  }
+  .opt.correct {
+    background: var(--green-light);
+    border-color: var(--green-mid);
+    color: var(--green);
+  }
+  .opt.correct .opt-letter { background: var(--green-mid); color: #fff; border-color: var(--green-mid); }
+  .opt.wrong {
+    background: var(--red-light);
+    border-color: #e57373;
+    color: var(--red);
+  }
+  .opt.wrong .opt-letter { background: #e57373; color: #fff; border-color: #e57373; }
+  .opt:disabled { cursor: default; }
+
+  /* Feedback */
+  .feedback {
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    font-size: 13px;
+    line-height: 1.5;
+    margin-bottom: 1rem;
+    border: 0.5px solid transparent;
+    display: none;
+  }
+  .feedback.show { display: block; }
+  .feedback.ok  { background: var(--green-light); border-color: var(--green-mid); color: var(--green); }
+  .feedback.bad { background: var(--red-light);   border-color: #e57373;          color: var(--red); }
+
+  /* Next button */
+  .btn-next {
+    width: 100%;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    padding: 13px;
+    font-size: 14px;
+    font-weight: 500;
+    font-family: var(--sans);
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    display: none;
+  }
+  .btn-next.show { display: block; }
+  .btn-next:hover { opacity: 0.88; }
+  .btn-next:active { transform: scale(0.99); }
+
+  /* Combo streak */
+  .streak-bar {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 1.25rem;
+    align-items: center;
+  }
+  .streak-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--border-strong);
+    transition: background 0.2s, transform 0.2s;
+  }
+  .streak-dot.lit {
+    background: var(--green-mid);
+    transform: scale(1.3);
+  }
+  .streak-label {
+    font-size: 11px;
+    color: var(--hint);
+    font-family: var(--mono);
+    margin-left: 4px;
+  }
+
+  /* Results screen */
+  .results {
+    background: var(--card);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 2.5rem 2rem;
+    text-align: center;
+    display: none;
+  }
+  .results.show { display: block; }
+  .results-icon {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: var(--green-light);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 1.25rem;
+  }
+  .results-icon svg { width: 28px; height: 28px; stroke: var(--green); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .results h2 { font-size: 22px; font-weight: 500; margin-bottom: 0.4rem; }
+  .results .sub { font-size: 14px; color: var(--muted); margin-bottom: 2rem; }
+  .results-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 1.75rem;
+    text-align: left;
+  }
+  .results-grid .hud-card { background: var(--bg); }
+  .results-msg {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--muted);
+    background: var(--bg);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    margin-bottom: 1.5rem;
+    border: 0.5px solid var(--border);
+  }
+  .btn-restart {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    padding: 12px 28px;
+    font-size: 14px;
+    font-weight: 500;
+    font-family: var(--sans);
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .btn-restart:hover { opacity: 0.88; }
+
+  /* Screen states */
+  .game-area { display: block; }
+  .game-area.hidden { display: none; }
+
+  /* Timer ring */
+  .timer-ring-wrap {
+    position: relative;
+    width: 44px; height: 44px;
+  }
+  .timer-ring-wrap svg {
+    position: absolute; top: 0; left: 0;
+    transform: rotate(-90deg);
+  }
+  .timer-ring-bg { stroke: var(--border); fill: none; stroke-width: 3; }
+  .timer-ring-fg { fill: none; stroke-width: 3; stroke-linecap: round; transition: stroke-dashoffset 0.9s linear, stroke 0.3s; }
+  .timer-center {
+    position: absolute;
+    inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  @keyframes pop { 0%{transform:scale(1)} 40%{transform:scale(1.18)} 100%{transform:scale(1)} }
+  .pop { animation: pop 0.25s ease; }
+
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+  .shake { animation: shake 0.3s ease; }
+</style>
+</head>
+<body>
+<div class="game-wrap">
+  <div class="header">
+    <div class="logo"><span></span>Ecolovers</div>
+    <div style="font-size:12px;color:var(--hint);font-family:var(--mono)">trivia</div>
+  </div>
+
+  <!-- Game area -->
+  <div class="game-area" id="gameArea">
+    <!-- HUD -->
+    <div class="hud">
+      <div class="hud-card">
+        <div class="hud-label">Puntos</div>
+        <div class="hud-value" id="scoreDisplay">0</div>
+      </div>
+      <div class="hud-card" style="align-items:center;">
+        <div class="hud-label" style="text-align:center">Tiempo</div>
+        <div class="timer-ring-wrap" id="timerRingWrap">
+          <svg viewBox="0 0 44 44" width="44" height="44">
+            <circle class="timer-ring-bg" cx="22" cy="22" r="19"/>
+            <circle class="timer-ring-fg" id="timerRing" cx="22" cy="22" r="19"
+              stroke-dasharray="119.4" stroke-dashoffset="0" stroke="#2d6a4f"/>
+          </svg>
+          <div class="timer-center" id="timerDisplay">15</div>
+        </div>
+      </div>
+      <div class="hud-card" style="align-items:flex-end">
+        <div class="hud-label">Racha</div>
+        <div class="hud-value" id="streakDisplay">×1</div>
+      </div>
+    </div>
+
+    <!-- Progress -->
+    <div class="progress-wrap">
+      <div class="progress-bar" id="progressBar" style="width:0%"></div>
+    </div>
+
+    <!-- Streak dots -->
+    <div class="streak-bar" id="streakBar">
+      <div class="streak-dot" id="sd0"></div>
+      <div class="streak-dot" id="sd1"></div>
+      <div class="streak-dot" id="sd2"></div>
+      <div class="streak-dot" id="sd3"></div>
+      <div class="streak-dot" id="sd4"></div>
+      <span class="streak-label" id="streakMsg">responde 5 seguidas para racha máxima</span>
+    </div>
+
+    <!-- Question card -->
+    <div class="q-card" id="qCard">
+      <div class="q-meta">
+        <span class="q-badge" id="diffBadge">fácil</span>
+        <span class="q-num" id="qNum">1 / 10</span>
+      </div>
+      <p class="q-text" id="qText">Cargando pregunta...</p>
+    </div>
+
+    <!-- Options -->
+    <div class="options" id="optionsWrap"></div>
+
+    <!-- Feedback -->
+    <div class="feedback" id="feedback"></div>
+
+    <!-- Next -->
+    <button class="btn-next" id="btnNext">Siguiente pregunta →</button>
+  </div>
+
+  <!-- Results -->
+  <div class="results" id="results">
+    <div class="results-icon">
+      <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <h2 id="resultsTitle">¡Bien hecho!</h2>
+    <p class="sub" id="resultsSub">Terminaste la trivia de reciclaje</p>
+    <div class="results-grid">
+      <div class="hud-card">
+        <div class="hud-label">Puntuación</div>
+        <div class="hud-value" id="finalScore">0</div>
+      </div>
+      <div class="hud-card">
+        <div class="hud-label">Correctas</div>
+        <div class="hud-value" id="finalCorrect">0/10</div>
+      </div>
+      <div class="hud-card">
+        <div class="hud-label">Mejor racha</div>
+        <div class="hud-value" id="finalStreak">0</div>
+      </div>
+      <div class="hud-card">
+        <div class="hud-label">Precisión</div>
+        <div class="hud-value" id="finalAcc">0%</div>
+      </div>
+    </div>
+    <div class="results-msg" id="resultsMsg"></div>
+    <button class="btn-restart" onclick="startGame()">Jugar de nuevo</button>
+  </div>
+</div>
+
+<script>
+const QUESTIONS = [
+  {
+    q: "¿Cuántos años tarda en degradarse una bolsa de plástico convencional en el medio ambiente?",
+    opts: ["10–20 años","50–100 años","400–500 años","1000+ años"],
+    correct: 2,
+    diff: "fácil",
+    exp: "Las bolsas plásticas tardan entre 400 y 500 años en degradarse, liberando microplásticos durante todo ese proceso."
+  },
+  {
+    q: "¿Qué símbolo indica que un envase puede reciclarse en la mayoría de los países?",
+    opts: ["Un árbol verde","El triángulo de Möbius (♻)","Un contenedor azul","Una hoja con flechas"],
+    correct: 1,
+    diff: "fácil",
+    exp: "El triángulo de Möbius, creado en 1970, es el símbolo universal de reciclaje. Los números dentro indican el tipo de plástico."
+  },
+  {
+    q: "¿Cuántas veces se puede reciclar el papel antes de que sus fibras sean demasiado cortas para reutilizarse?",
+    opts: ["2–3 veces","5–7 veces","10–12 veces","20+ veces"],
+    correct: 1,
+    diff: "medio",
+    exp: "El papel puede reciclarse aproximadamente 5 a 7 veces. Las fibras de celulosa se acortan con cada proceso hasta que ya no son aptas."
+  },
+  {
+    q: "¿Qué material ahorra más energía al ser reciclado comparado con su producción desde cero?",
+    opts: ["Papel","Vidrio","Aluminio","Plástico PET"],
+    correct: 2,
+    diff: "medio",
+    exp: "Reciclar aluminio ahorra hasta el 95% de la energía necesaria para producirlo desde la bauxita. Una lata reciclada vuelve a la tienda en 60 días."
+  },
+  {
+    q: "¿Cuál es el plástico más reciclado en el mundo y se identifica con el número 1?",
+    opts: ["PVC","HDPE","PET","Poliestireno"],
+    correct: 2,
+    diff: "medio",
+    exp: "El PET (polietilentereftalato), número 1, es usado en botellas de agua y refrescos. Es el plástico más reciclado globalmente."
+  },
+  {
+    q: "¿Cuántos litros de agua pueden contaminarse con solo 1 litro de aceite de cocina usado si se vierte por el desagüe?",
+    opts: ["100 litros","1.000 litros","40.000 litros","1.000.000 litros"],
+    correct: 2,
+    diff: "difícil",
+    exp: "Un litro de aceite puede contaminar hasta 40.000 litros de agua, creando una película que impide la oxigenación acuática. Siempre llévalo a un punto limpio."
+  },
+  {
+    q: "¿Cuál es la regla básica de la economía circular, en orden correcto?",
+    opts: ["Reparar, reducir, reutilizar","Reducir, reutilizar, reciclar","Reciclar, reducir, reparar","Reutilizar, reciclar, reducir"],
+    correct: 1,
+    diff: "fácil",
+    exp: "Las 3R en orden: Reducir (prioridad más alta), Reutilizar y Reciclar. Reducir es lo más impactante porque evita que el residuo exista."
+  },
+  {
+    q: "¿Qué porcentaje del plástico producido globalmente desde 1950 ha sido reciclado?",
+    opts: ["9%","24%","42%","61%"],
+    correct: 0,
+    diff: "difícil",
+    exp: "Solo el 9% del plástico producido en la historia ha sido reciclado. Un 12% fue incinerado y el 79% restante está en rellenos o el ambiente."
+  },
+  {
+    q: "El compostaje transforma residuos orgánicos en abono. ¿Cuánto tiempo tarda un compost casero básico?",
+    opts: ["1–2 semanas","1–3 meses","6–12 meses","2–3 años"],
+    correct: 2,
+    diff: "medio",
+    exp: "Un compost casero bien gestionado (temperatura, humedad, volteo) tarda entre 6 y 12 meses. Los compostadores acelerados pueden lograrlo en 3 meses."
+  },
+  {
+    q: "¿Qué objeto NO debe tirarse nunca a la basura doméstica ordinaria?",
+    opts: ["Cáscaras de fruta","Cartón de leche","Pilas y baterías","Papel de periódico"],
+    correct: 2,
+    diff: "fácil",
+    exp: "Las pilas contienen mercurio, cadmio y plomo. Deben llevarse a puntos de recolección especiales. Una pila de botón contamina 1 m² de suelo durante 50 años."
+  }
+];
+
+const TOTAL_TIME = 15;
+const TOTAL_Q = QUESTIONS.length;
+const CIRCUMFERENCE = 2 * Math.PI * 19;
+
+let state = {};
+
+function startGame() {
+  const shuffled = [...QUESTIONS].sort(() => Math.random() - 0.5);
+  state = {
+    questions: shuffled,
+    idx: 0,
+    score: 0,
+    streak: 0,
+    bestStreak: 0,
+    correct: 0,
+    multiplier: 1,
+    timeLeft: TOTAL_TIME,
+    answered: false,
+    timer: null
+  };
+  document.getElementById('results').classList.remove('show');
+  document.getElementById('gameArea').classList.remove('hidden');
+  renderQuestion();
+}
+
+function renderQuestion() {
+  clearInterval(state.timer);
+  state.timeLeft = TOTAL_TIME;
+  state.answered = false;
+
+  const q = state.questions[state.idx];
+  const progress = (state.idx / TOTAL_Q) * 100;
+
+  document.getElementById('progressBar').style.width = progress + '%';
+  document.getElementById('qNum').textContent = (state.idx + 1) + ' / ' + TOTAL_Q;
+  document.getElementById('qText').textContent = q.q;
+  document.getElementById('feedback').className = 'feedback';
+  document.getElementById('btnNext').className = 'btn-next';
+
+  const badge = document.getElementById('diffBadge');
+  badge.textContent = q.diff;
+  badge.className = 'q-badge ' + ({fácil:'badge-easy',medio:'badge-medium',difícil:'badge-hard'}[q.diff] || 'badge-easy');
+
+  const wrap = document.getElementById('optionsWrap');
+  wrap.innerHTML = '';
+  const letters = ['A','B','C','D'];
+  q.opts.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'opt';
+    btn.innerHTML = `<span class="opt-letter">${letters[i]}</span><span>${opt}</span>`;
+    btn.onclick = () => selectAnswer(i);
+    wrap.appendChild(btn);
+  });
+
+  updateStreak();
+  updateTimerRing(TOTAL_TIME, TOTAL_TIME);
+  startTimer();
+}
+
+function startTimer() {
+  state.timer = setInterval(() => {
+    state.timeLeft--;
+    updateTimerRing(state.timeLeft, TOTAL_TIME);
+    if (state.timeLeft <= 0) {
+      clearInterval(state.timer);
+      if (!state.answered) timeUp();
+    }
+  }, 1000);
+}
+
+function updateTimerRing(left, total) {
+  const pct = left / total;
+  const offset = CIRCUMFERENCE * (1 - pct);
+  const ring = document.getElementById('timerRing');
+  ring.style.strokeDashoffset = offset;
+  ring.style.stroke = left > 8 ? '#2d6a4f' : left > 4 ? '#b5620a' : '#9b2226';
+  const disp = document.getElementById('timerDisplay');
+  disp.textContent = left;
+  disp.className = 'timer-center' + (left <= 4 ? ' timer-danger' : left <= 8 ? ' timer-warn' : '');
+}
+
+function timeUp() {
+  state.answered = true;
+  state.streak = 0;
+  state.multiplier = 1;
+  const q = state.questions[state.idx];
+  const opts = document.querySelectorAll('.opt');
+  opts.forEach((o, i) => {
+    o.disabled = true;
+    if (i === q.correct) o.classList.add('correct');
+  });
+  showFeedback(false, '⏱ Tiempo agotado. La respuesta correcta era: ' + q.opts[q.correct] + '. ' + q.exp);
+  updateStreak();
+  document.getElementById('btnNext').classList.add('show');
+}
+
+function selectAnswer(idx) {
+  if (state.answered) return;
+  clearInterval(state.timer);
+  state.answered = true;
+
+  const q = state.questions[state.idx];
+  const isCorrect = idx === q.correct;
+  const opts = document.querySelectorAll('.opt');
+
+  opts.forEach((o, i) => {
+    o.disabled = true;
+    if (i === q.correct) o.classList.add('correct');
+    else if (i === idx && !isCorrect) o.classList.add('wrong');
+  });
+
+  if (isCorrect) {
+    const timeBonus = Math.max(0, state.timeLeft);
+    const diffMult = {fácil:1, medio:1.5, difícil:2}[q.diff] || 1;
+    const points = Math.round((100 + timeBonus * 5) * state.multiplier * diffMult);
+    state.score += points;
+    state.streak++;
+    state.correct++;
+    state.bestStreak = Math.max(state.bestStreak, state.streak);
+    state.multiplier = Math.min(1 + (state.streak - 1) * 0.25, 3);
+    document.getElementById('scoreDisplay').textContent = state.score;
+    document.getElementById('scoreDisplay').classList.add('pop');
+    setTimeout(() => document.getElementById('scoreDisplay').classList.remove('pop'), 300);
+    showFeedback(true, '+' + points + ' pts — ' + q.exp);
+  } else {
+    state.streak = 0;
+    state.multiplier = 1;
+    document.getElementById('qCard').classList.add('shake');
+    setTimeout(() => document.getElementById('qCard').classList.remove('shake'), 350);
+    showFeedback(false, 'Incorrecto. ' + q.exp);
+  }
+
+  updateStreak();
+  document.getElementById('btnNext').classList.add('show');
+  document.getElementById('btnNext').textContent = state.idx < TOTAL_Q - 1 ? 'Siguiente pregunta →' : 'Ver resultados →';
+}
+
+function showFeedback(ok, msg) {
+  const el = document.getElementById('feedback');
+  el.textContent = msg;
+  el.className = 'feedback show ' + (ok ? 'ok' : 'bad');
+}
+
+function updateStreak() {
+  const s = state.streak;
+  for (let i = 0; i < 5; i++) {
+    const d = document.getElementById('sd' + i);
+    if (d) d.className = 'streak-dot' + (i < s ? ' lit' : '');
+  }
+  const mult = state.multiplier || 1;
+  document.getElementById('streakDisplay').textContent = '×' + mult.toFixed(2).replace('.00','').replace(/\.(\d)0$/,'.$1');
+  const msg = s >= 5 ? '¡racha máxima activa!' : s > 0 ? s + ' seguidas — sigue así' : 'responde 5 seguidas para racha máxima';
+  document.getElementById('streakMsg').textContent = msg;
+}
+
+document.getElementById('btnNext').addEventListener('click', () => {
+  state.idx++;
+  if (state.idx >= TOTAL_Q) {
+    showResults();
+  } else {
+    renderQuestion();
+  }
+});
+
+function showResults() {
+  clearInterval(state.timer);
+  document.getElementById('gameArea').classList.add('hidden');
+  const acc = Math.round((state.correct / TOTAL_Q) * 100);
+  document.getElementById('finalScore').textContent = state.score;
+  document.getElementById('finalCorrect').textContent = state.correct + '/' + TOTAL_Q;
+  document.getElementById('finalStreak').textContent = state.bestStreak;
+  document.getElementById('finalAcc').textContent = acc + '%';
+
+  let title, sub, msg;
+  if (acc >= 90) {
+    title = '¡Experto ecologista!';
+    sub = 'Conocimiento ambiental sobresaliente';
+    msg = 'Tu comprensión sobre reciclaje y ecología es excelente. Comparte este conocimiento — cada persona informada multiplica el impacto positivo en el planeta.';
+  } else if (acc >= 70) {
+    title = '¡Buen trabajo!';
+    sub = 'Sólida conciencia ambiental';
+    msg = 'Tienes una buena base ecológica. Hay algunos puntos para profundizar, especialmente en materiales y tiempos de degradación.';
+  } else if (acc >= 50) {
+    title = 'En camino';
+    sub = 'Conciencia ambiental en desarrollo';
+    msg = 'Vas por buen camino. Te recomendamos explorar más sobre los tipos de plástico y su reciclaje — ¡es fascinante y muy útil en el día a día!';
+  } else {
+    title = '¡Aprende y vuelve!';
+    sub = 'El conocimiento también es reciclable';
+    msg = 'No te preocupes, la conciencia ambiental se construye poco a poco. Cada intento es aprendizaje. ¡Inténtalo de nuevo!';
+  }
+  document.getElementById('resultsTitle').textContent = title;
+  document.getElementById('resultsSub').textContent = sub;
+  document.getElementById('resultsMsg').textContent = msg;
+  document.getElementById('results').classList.add('show');
+}
+
+startGame();
+</script>
+</body>
+</html>
+{% endblock %}
