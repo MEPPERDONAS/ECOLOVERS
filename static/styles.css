@@ -3,6 +3,7 @@
 :root {
   --bg: #f4f2ec;
   --surface: #111111;
+  --surface2: #faf9f6;
   --border: #222222;
   --accent: #3a946c;
   --accent2: #37c285;
@@ -146,7 +147,7 @@ h1 span { color: var(--accent); }
 .streak-container {
     margin-top: 30px;
     background: white;
-    padding: 15px;
+    padding: 1.5rem 1rem;
     margin-bottom: 20px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.05);
     border: 0.5px solid var(--border);
@@ -256,6 +257,7 @@ h1 span { color: var(--accent); }
   font-family: 'area-normal', sans-serif;  font-size: 11px;
   color: var(--muted);
   margin-top: 12px;
+  text-align: center;
 }
 .drop-zone::before {
   content: '';
@@ -791,6 +793,10 @@ h1 span { color: var(--accent); }
 .guide-header h2 {
   font-size: 1.5rem;
   margin-bottom: 8px;
+  background: #243b64;
+  color: white;
+  padding: 0.8rem;
+  border-radius: var(--radius);
 }
 
 .guide-bin {
@@ -1089,7 +1095,7 @@ main {
   transition: all 0.3s ease-in-out; /* Controla la velocidad aquí */
   pointer-events: none;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
   gap: 10px;
   margin-top: 12px;
 }
@@ -1105,7 +1111,7 @@ main {
 .stats-card {
   border-radius: 10px;
   border: var(--accent) 1px solid;
-  background: linear-gradient(to top, #c1ffd2, #f5f5f5);
+  background: var(--surface2);
   padding: 10px;
   display: flex;
   flex-direction: row;

@@ -3,6 +3,7 @@
     "title": "Cartón",
     "bin": "Caneca blanca (aprovechables limpios y secos).",
     "image": "img/guides/carton.jpg",
+    "svg": "img/guides/carton.svg",
     "how_to": [
       "Dobla y compacta cajas para ahorrar espacio.",
       "Retira cintas plásticas y restos de comida.",
@@ -23,6 +24,7 @@
     "title": "Vidrio",
     "bin": "Caneca blanca (aprovechables), limpio y sin tapas.",
     "image": "img/guides/vidrio.jpg",
+    "svg": "img/guides/vidrio.svg",
     "how_to": [
       "Enjuaga botellas y frascos para quitar residuos.",
       "Separa tapas metálicas o plásticas.",
@@ -39,10 +41,10 @@
       "No enviar vidrio contaminado con químicos peligrosos."
     ]
   },
-  "metal": {
-    "title": "Metal",
+  "metal": {    "title": "Metal",
     "bin": "Caneca blanca, limpio y sin residuos orgánicos.",
     "image": "img/guides/metal.webp",
+    "svg": "img/guides/metal.svg",
     "how_to": [
       "Enjuaga latas de bebidas o conservas.",
       "Aplasta latas para reducir volumen.",
@@ -63,6 +65,7 @@
     "title": "Papel",
     "bin": "Caneca blanca, papel limpio y seco.",
     "image": "img/guides/papel.jpg",
+    "svg": "img/guides/papel.svg",
     "how_to": [
       "Separa hojas, periódicos y cuadernos sin espiral.",
       "Mantén el papel lejos de humedad.",
@@ -82,6 +85,7 @@
   "plastico": {
     "title": "Plástico",
     "image": "img/guides/plastico.jpg",
+    "svg": "img/guides/plastico.svg",
     "bin": "Caneca blanca, envases limpios y secos.",
     "how_to": [
       "Enjuaga envases y deja escurrir.",
@@ -103,6 +107,7 @@
     "title": "Basura General",
     "bin": "Caneca negra (no aprovechables).",
     "image": "img/guides/basura-general.webp",
+    "svg": "img/guides/basura-general.svg",
     "how_to": [
       "Deposita residuos que no se pueden reciclar.",
       "Usa bolsas cerradas para evitar derrames.",
