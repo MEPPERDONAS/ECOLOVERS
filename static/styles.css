@@ -1317,7 +1317,7 @@ main {
   gap: 14px;
   position: relative;
   padding: 17px;
-  margin: 2px 0 14px;
+  margin: 2px 0 34px;
   border: 1px solid rgba(32, 41, 68, 0.05);
   border-radius: 20px;
   background: #fff;
@@ -1334,6 +1334,9 @@ main {
 
 .home-welcome-copy {
   min-width: 0;
+  padding: 15px;
+  background-color: azure;
+  border-radius: 10px;
 }
 
 .home-eyebrow {
@@ -1389,6 +1392,7 @@ main {
 }
 
 .home-streak {
+  display: none;
   padding: 17px 18px 14px;
   border-radius: 20px;
   background: #fff;
@@ -1460,12 +1464,19 @@ main {
   outline-offset: 2px;
 }
 
+.home-streak-bar {
+  grid-column: 1 / -1;
+  display: flex;
+  width: 100%;
+  justify-content: flex-end;
+}
+
 .home-streak-count {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
   gap: 5px;
-  margin-top: 11px;
+  margin: 0;
   color: #53596a;
   font-size: 0.75rem;
 }
@@ -1483,12 +1494,13 @@ main {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 9px;
+  margin: 2px 0 34px;
 }
 
 .home-action-card {
   display: grid;
-  min-height: 95px;
-  align-content: center;
+  min-height: 165px;
+  align-content: end;
   justify-items: center;
   gap: 7px;
   padding: 9px 4px;

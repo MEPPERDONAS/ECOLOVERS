@@ -11,7 +11,10 @@
       <h1 id="welcome-title">Hola, <span>{{ user }}</span></h1>
       <p>Pequeñas acciones pueden cambiar el mundo.</p>
     </div>
-    <a class="home-trivia-link" href="{{ url_for('trivia') }}">Jugar trivia <span aria-hidden="true">→</span></a>
+    <!-- <a class="home-trivia-link" href="{{ url_for('trivia') }}">Jugar trivia <span aria-hidden="true">→</span></a> -->
+    <div class="home-streak-bar">
+      <p class="home-streak-count"><strong>{{ stats.get('racha_actual', 0) }}</strong> días de racha <span aria-hidden="true">💚</span></p>
+    </div>
   </section>
 
   <section class="home-streak" aria-labelledby="week-title">
@@ -37,7 +40,6 @@
       </div>
       {% endfor %}
     </div>
-    <p class="home-streak-count"><strong>{{ stats.get('racha_actual', 0) }}</strong> días de racha <span aria-hidden="true">♥</span></p>
   </section>
 
   <section class="home-actions" aria-labelledby="actions-title">
