@@ -16,9 +16,6 @@ from flask_cors import CORS
 from flask_caching import Cache
 from psycopg2 import pool
 
-# --- IA: GEMINI (nuevo SDK google-genai) ---
-from google import genai
-
 # Cargar variables de entorno 
 load_dotenv()
 
@@ -30,9 +27,6 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
-genai_client = genai.Client(api_key=GOOGLE_API_KEY)
 
 app = Flask(__name__, root_path=BASE_DIR)
 CORS(app)
@@ -256,7 +250,6 @@ def login_required(view):
     @wraps(view)
     def wrapped(*args, **kwargs):
         if not session.get('user'):
-            if request.path.startswith('/predict'): return jsonify({'error': 'No autenticado'}), 401
             return redirect(url_for('login', next=request.path))
         return view(*args, **kwargs)
     return wrapped
@@ -271,57 +264,6 @@ def index():
     username = session.get('user')
     stats = compute_user_stats(username)
     return render_template('index.html', labels=LABELS, user=username, stats=stats, model_available=True)
-
-@app.route('/predict', methods=['POST'])
-@login_required
-def predict():
-    if 'image' not in request.files: return jsonify({'error': 'No image'}), 400
-    file = request.files['image']
-    img_bytes = file.read()
-    
-    try:
-        import base64
-        img_b64 = base64.standard_b64encode(img_bytes).decode('utf-8')
-
-        prompt = f"""
-        Analiza esta imagen de un residuo y clasifícala en una de estas categorías: {', '.join(LABELS)}.
-        Responde estrictamente en formato JSON con solo estos dos campos:
-        {{"label": "nombre_de_la_categoria", "confidence": 0.95}}
-        """
-
-        response = genai_client.models.generate_content(
-            model='gemini-2.0-flash',
-            contents=[
-                prompt,
-                {'inline_data': {'mime_type': 'image/jpeg', 'data': img_b64}}
-            ]
-        )
-        
-        # Limpiar la respuesta de posibles bloques de código Markdown
-        res_text = response.text.replace('```json', '').replace('```', '').strip()
-        data = json.loads(res_text)
-        
-        label = data.get('label', 'Basura General')
-        if label not in LABELS: label = 'Basura General'
-        idx = LABELS.index(label)
-        conf = data.get('confidence', 0.8) * 100
-
-        all_scores = [{'label': LABELS[i], 'icon': ICONS[i], 'slug': GUIDE_SLUGS[i], 
-                       'probability': conf if i == idx else (100-conf)/5} for i in range(len(LABELS))]
-
-        save_analysis(session.get('user'), file.filename, label, GUIDE_SLUGS[idx], conf, all_scores)
-        return jsonify({
-            'label': label, 
-            'icon': ICONS[idx], 
-            'slug': GUIDE_SLUGS[idx], 
-            'confidence': round(conf, 2), 
-            'all_scores': all_scores
-        })
-    except Exception as e:
-        log.error(f"Error IA: {e}")
-        # Si el error es de modelo no encontrado, intentamos dar una pista
-        return jsonify({'error': 'El modelo de IA no está respondiendo. Verifica tu API Key o el nombre del modelo.'}), 500
-
 
 @app.route('/save_manual', methods=['POST'])
 @login_required
@@ -346,6 +288,7 @@ def save_manual():
         'label': label, 
         'icon': ICONS[idx], 
         'slug': GUIDE_SLUGS[idx], 
+        'catIndex': idx,
         'confidence': conf, 
         'all_scores': all_scores
     })

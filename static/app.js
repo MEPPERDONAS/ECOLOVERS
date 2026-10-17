@@ -153,18 +153,9 @@ async function captureAndAnalyze() {
     const lastItem = imageQueue[imageQueue.length - 1];
     if (!lastItem) return;
 
-    try {
-      showAnalyzingOverlay(lastItem.id);
-      lastItem.result = await classifyImage(lastItem);
-      removeAnalyzingOverlay(lastItem.id);
-      updateCard(lastItem);
-      showSummary();
-      closeCameraDock();
-    } catch (error) {
-      removeAnalyzingOverlay(lastItem.id);
-      console.error(error);
-      alert('No se pudo analizar la foto capturada.');
-    }
+    lastItem.result = { label: 'Pendiente', confidence: 0, manual: true };
+    showManualSelection(lastItem.id);
+    closeCameraDock();
   }, 'image/png');
 }
 
@@ -249,40 +240,14 @@ async function analyzeAll() {
   for (let i = 0; i < pending.length; i++) {
     const item = pending[i];
     updateProgress(i, pending.length, item.name);
-    showAnalyzingOverlay(item.id);
-
-    try {
-      item.result = await classifyImage(item);
-    } catch (e) {
-      console.error(e);
-      item.result = { label: 'Error', confidence: 0, catIndex: -1, slug: '' };
-    }
-
-    removeAnalyzingOverlay(item.id);
-    updateCard(item);
+    item.result = { label: 'Pendiente', confidence: 0, manual: true };
+    showManualSelection(item.id);
     updateProgress(i + 1, pending.length, '');
   }
 
   if (analyzeBtn) analyzeBtn.disabled = false;
   if (progressWrap) progressWrap.style.display = 'none';
-  showSummary();
   analyzing = false;
-}
-
-async function classifyImage(item) {
-  const formData = new FormData();
-  formData.append('image', item.file);
-
-  try {
-    const res = await fetch('/predict', { method: 'POST', body: formData });
-    if (!res.ok) throw new Error("Fallo de IA");
-    
-    const data = await res.json();
-    return data;
-  } catch (e) {
-    showManualSelection(item.id); //
-    return { label: 'Pendiente', confidence: 0, manual: true };
-  }
 }
 
 function showManualSelection(id) {
@@ -294,7 +259,7 @@ function showManualSelection(id) {
   
   resultEl.innerHTML = `
     <div class="manual-fallback">
-      <p style="margin:0 0 5px 0; font-size:11px; color:#e53e3e; font-weight:bold;">IA no disponible</p>
+      <p style="margin:0 0 5px 0; font-size:11px; font-weight:bold;">Selecciona una categoría</p>
       <select id="select-${id}" class="manual-select">
         <option value="" disabled selected>¿Qué es?</option>
         ${options}
@@ -303,8 +268,6 @@ function showManualSelection(id) {
     </div>
   `;
   
-  // Quitamos cualquier overlay de "analizando" para que deje interactuar
-  removeAnalyzingOverlay(id);
 }
 
 async function confirmManual(id) {
@@ -368,20 +331,6 @@ function updateCard(item) {
   if (barEl) setTimeout(() => { barEl.style.width = `${confidence}%`; }, 100);
 }
 
-function showAnalyzingOverlay(id) {
-  const card = document.getElementById(`card-${id}`);
-  if (!card) return;
-  const overlay = document.createElement('div');
-  overlay.className = 'analyzing-overlay';
-  overlay.id = `overlay-${id}`;
-  overlay.innerHTML = '<div class="spinner"></div><div class="spinner-label">Analizando</div>';
-  card.appendChild(overlay);
-}
-
-function removeAnalyzingOverlay(id) {
-  document.getElementById(`overlay-${id}`)?.remove();
-}
-
 function updateProgress(current, total, filename) {
   const pct = Math.round((current / total) * 100);
   const fill = document.getElementById('progress-fill');
@@ -389,7 +338,9 @@ function updateProgress(current, total, filename) {
   const text = document.getElementById('progress-text');
   if (fill) fill.style.width = `${pct}%`;
   if (pctEl) pctEl.textContent = `${pct}%`;
-  if (text) text.textContent = current < total ? `Analizando: ${filename}` : 'Completado';
+  if (text) text.textContent = current < total
+    ? `Selecciona categoría: ${filename}`
+    : 'Selecciona una categoría para cada imagen';
 }
 
 function showSummary() {
@@ -457,12 +408,13 @@ botonDetalles.addEventListener('click', () => {
     statsGrid.style.maxHeight = statsGrid.scrollHeight + "px";
     statsGrid.style.opacity = "1";
     botonDetalles.innerText = "Ver menos";
+    botonDetalles.setAttribute('aria-expanded', 'true');
 
   } else {
     statsGrid.classList.remove('active');
     statsGrid.style.maxHeight = "0";
     statsGrid.style.opacity = "0";
     botonDetalles.innerText = "Ver más";
+    botonDetalles.setAttribute('aria-expanded', 'false');
   }
 });
-

@@ -1,52 +1,109 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 
 {% block title %}Home{% endblock %}
 
 {% block content %}
-<body>
-<div class="container">
-  <div class="header-logo">
-    <img src="{{ url_for('static', filename='LOGO.PNG') }}" alt="ecoloverlogo">
-  </div>
+<main class="container home-screen">
+  <section class="home-welcome" aria-labelledby="welcome-title">
+    <div class="home-avatar header-img avatar-{{ stats.avatar_id }}" role="img" aria-label="Tu avatar"></div>
+    <div class="home-welcome-copy">
+      <p class="home-eyebrow">Tu espacio ecológico</p>
+      <h1 id="welcome-title">Hola, <span>{{ user }}</span></h1>
+      <p>Pequeñas acciones pueden cambiar el mundo.</p>
+    </div>
+    <a class="home-trivia-link" href="{{ url_for('trivia') }}">Jugar trivia <span aria-hidden="true">→</span></a>
+  </section>
 
-    <div class="user-info">
-      <span> Hola, <strong>{{ user }}</strong></span>
-      <a class="btn trivia-btn" href="/trivia">
-            trivia
-      </a>
+  <section class="home-streak" aria-labelledby="week-title">
+    <div class="home-section-heading">
+      <div>
+        <p class="home-eyebrow">Tu constancia</p>
+        <h2 id="week-title">Actividad de la semana</h2>
+      </div>
+      <a class="home-text-link" href="{{ url_for('history') }}">Historial</a>
     </div>
 
-    <div class="streak-container container-animado retraso-1">
-      <h4>Actividad de la semana</h4>
-      <div class="week-grid">
-        {% for dia in stats.semana %}
-        <div class="day-box {% if dia.activo %}active{% endif %} {% if dia.es_hoy %}today{% endif %}">
-          <span class="day-name">{{ dia.nombre }}</span>
-          <div class="day-dot container-animado retraso-2">
-            {% if dia.activo %}
-              {% include 'icons/seedling.svg' %}
-            {% endif %}
-          </div>
+    <div class="home-week-grid">
+      {% for dia in stats.semana %}
+      <div class="home-day {% if dia.activo %}active{% endif %} {% if dia.es_hoy %}today{% endif %}">
+        <span>{{ dia.nombre }}</span>
+        <div class="home-day-mark">
+          {% if dia.activo %}
+            {% include 'icons/seedling.svg' %}
+          {% else %}
+            <span aria-hidden="true">·</span>
+          {% endif %}
         </div>
-        {% endfor %}
       </div>
+      {% endfor %}
+    </div>
+    <p class="home-streak-count"><strong>{{ stats.get('racha_actual', 0) }}</strong> días de racha <span aria-hidden="true">♥</span></p>
+  </section>
 
-      <div class="streak-badge">
-          <span class="streak-count">
-              {{ stats.get('racha_actual', 0) }} Días
-          </span>
-          <a class="btn-history" href="{{ url_for('history') }}">Historial</a>
+  <section class="home-actions" aria-labelledby="actions-title">
+    <div class="home-section-heading">
+      <div>
+        <p class="home-eyebrow">Aprende y participa</p>
+        <h2 id="actions-title">¿Qué hacemos hoy?</h2>
       </div>
-    
+    </div>
+    <div class="home-action-grid">
+      <a class="home-action-card action-scan" href="#clasificador">
+        <span class="home-action-icon" aria-hidden="true">♻</span>
+        <span>Clasificar</span>
+      </a>
+      <a class="home-action-card action-guide" href="{{ url_for('guide', slug='carton') }}">
+        <span class="home-action-icon" aria-hidden="true">◎</span>
+        <span>Guías eco</span>
+      </a>
+      <a class="home-action-card action-play" href="{{ url_for('trivia') }}">
+        <span class="home-action-icon" aria-hidden="true">✳</span>
+        <span>Jugar</span>
+      </a>
+      <a class="home-action-card action-tips" href="{{ url_for('tips') }}">
+        <span class="home-action-icon" aria-hidden="true">♡</span>
+        <span>Tips</span>
+      </a>
+    </div>
+  </section>
 
-  </div>
+  <section class="home-tips" aria-labelledby="tips-title">
+    <div class="home-section-heading">
+      <div>
+        <p class="home-eyebrow">Ideas para tu día a día</p>
+        <h2 id="tips-title">Tips Eco Lover</h2>
+      </div>
+      <a class="home-text-link" href="{{ url_for('tips') }}">Ver todos</a>
+    </div>
+    <div class="home-tip-list">
+      <a class="home-tip-card" href="{{ url_for('guide', slug='papel') }}">
+        <img src="{{ url_for('static', filename='img/guides/papel.jpg') }}" alt="Papel y cartón listos para reciclar" loading="lazy">
+        <span class="home-tip-copy">
+          <strong>Dale una segunda vida al papel</strong>
+          <span>Aplana las cajas y mantenlas secas y limpias antes de reciclarlas.</span>
+        </span>
+        <span class="home-tip-arrow" aria-hidden="true">↗</span>
+      </a>
+      <a class="home-tip-card" href="{{ url_for('guide', slug='carton') }}">
+        <img src="{{ url_for('static', filename='img/guides/carton.jpg') }}" alt="Cartón preparado para su reciclaje" loading="lazy">
+        <span class="home-tip-copy">
+          <strong>Separa las cajas de cartón</strong>
+          <span>Retira los residuos y pliega las cajas para facilitar su transporte.</span>
+        </span>
+        <span class="home-tip-arrow" aria-hidden="true">↗</span>
+      </a>
+    </div>
+  </section>
 
-  <section class="stats-panel">
+  <section class="stats-panel home-stats">
     <div class="stats-head">
-      <h3>Datos Generales de Analisis</h3>
-      <p>Total de analisis: <strong>{{ stats.total }}</strong></p>
+      <div>
+        <p class="home-eyebrow">Tu impacto</p>
+        <h3>Datos generales de análisis</h3>
+      </div>
+      <button class="btn-vermas" id="detalles-btn" type="button" aria-expanded="false" aria-controls="stats-info">Ver más</button>
+      <p>Total de análisis: <strong>{{ stats.total }}</strong></p>
       <p>Trazabilidad: <strong>{{ stats.first_at or 'Sin datos' }}</strong> a <strong>{{ stats.last_at or 'Sin datos' }}</strong></p>
-      <button class="btn-vermas" id="detalles-btn">Ver más</button>
     </div>
 
     <div class="stats-grid" id="stats-info">
@@ -58,74 +115,79 @@
           <p class="stats-range">{{ row.last_at or 'Sin registro' }}</p>
         </div>
         <p class="stats-number">{{ row.count }}</p>
-
-      
       </article>
       {% endfor %}
     </div>
 
     <div class="stats-timeline">
-      <h4>Trazabilidad por fecha (ultimos 30 dias con actividad)</h4>
+      <h4>Trazabilidad por fecha (últimos 30 días con actividad)</h4>
       {% if stats.timeline %}
         {% for point in stats.timeline %}
         <div class="timeline-row">
           <span>{{ point.date }}</span>
-          <strong>{{ point.count }} analisis</strong>
+          <strong>{{ point.count }} análisis</strong>
         </div>
         {% endfor %}
       {% else %}
-        <p class="history-meta">Sin registros de fechas todavia.</p>
+        <p class="history-meta">Sin registros de fechas todavía.</p>
       {% endif %}
     </div>
   </section>
 
-  <div class="nav-container">
-    <span class="model-info"><span class="accent-dot"></span> {{ labels|join(' · ') }}</span>
-  </div>
-
-  <div class="drop-zone" id="drop-zone">
-    <span class="drop-icon">♻️</span>
-    <h2>Arrastra tus imágenes aquí</h2>
-    <p>
-      Suelta archivos JPG, PNG, WEBP
-      &nbsp;·&nbsp; o
-      <span onclick="document.getElementById('file-input').click()">busca en tu equipo</span>
-    </p>
-    <input type="file" id="file-input" multiple accept="image/*">
-  </div>
-
-  <div class="batch-header" id="batch-header" style="display:none">
-    <h3>Cola de imágenes &nbsp;<span id="img-count" style="color:var(--accent)">0</span></h3>
-    <button onclick="clearAll()">Limpiar todo</button>
-  </div>
-
-  <div class="image-grid" id="image-grid"></div>
-
-  <div class="analyze-area" id="analyze-area" style="display:none">
-    <button class="btn-analyze" id="btn-analyze" onclick="analyzeAll()">▶ Analizar imágenes</button>
-  </div>
-
-  <div class="progress-wrap" id="progress-wrap">
-    <div class="progress-label">
-      <span id="progress-text">Analizando...</span>
-      <span id="progress-pct">0%</span>
+  <section class="home-classifier" id="clasificador" aria-labelledby="classifier-title">
+    <div class="home-section-heading">
+      <div>
+        <p class="home-eyebrow">Dale una nueva vida</p>
+        <h2 id="classifier-title">Clasifica tus residuos</h2>
+      </div>
     </div>
-    <div class="progress-track">
-      <div class="progress-fill" id="progress-fill"></div>
+    <div class="nav-container">
+      <span class="model-info"><span class="accent-dot"></span> {{ labels|join(' · ') }}</span>
     </div>
-  </div>
 
-  <div class="summary" id="summary">
-    <h3>// Resumen de clasificación</h3>
-    <div class="summary-grid" id="summary-grid"></div>
-  </div>
+    <div class="drop-zone home-drop-zone" id="drop-zone">
+      <span class="drop-icon">♻️</span>
+      <h2>Agrega una imagen para empezar</h2>
+      <p>
+        JPG, PNG o WEBP
+        &nbsp;·&nbsp; o
+        <span onclick="document.getElementById('file-input').click()">busca en tu equipo</span>
+      </p>
+      <input type="file" id="file-input" multiple accept="image/*">
+    </div>
 
-</div>
+    <div class="batch-header" id="batch-header" style="display:none">
+      <h3>Cola de imágenes &nbsp;<span id="img-count" style="color:var(--accent)">0</span></h3>
+      <button onclick="clearAll()">Limpiar todo</button>
+    </div>
+
+    <div class="image-grid" id="image-grid"></div>
+
+    <div class="analyze-area" id="analyze-area" style="display:none">
+      <button class="btn-analyze" id="btn-analyze" onclick="analyzeAll()">▶ Clasificar imágenes</button>
+    </div>
+
+    <div class="progress-wrap" id="progress-wrap">
+      <div class="progress-label">
+        <span id="progress-text">Preparando selección...</span>
+        <span id="progress-pct">0%</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+    </div>
+
+    <div class="summary" id="summary">
+      <h3>Resumen de clasificación</h3>
+      <div class="summary-grid" id="summary-grid"></div>
+    </div>
+  </section>
+</main>
 
 <div class="camera-dock" id="camera-dock" hidden>
   <div class="camera-dock-head">
     <div class="camera-dock-actions">
-      <button class="btn btn-ghost btn-cls" id="close-camera-dock" type="button">✖</button>
+      <button class="btn btn-ghost btn-cls" id="close-camera-dock" type="button" aria-label="Cerrar cámara">✖</button>
     </div>
   </div>
   <div class="camera-body">
@@ -133,14 +195,8 @@
     <canvas id="camera-canvas" style="display:none"></canvas>
   </div>
   <div class="camera-footer">
-    <button class="btn btn-primary" id="btn-capture" type="button" disabled>Tomar foto y analizar</button>
-    <span class="camera-hint">Permite acceso a camara para habilitar captura.</span>
+    <button class="btn btn-primary" id="btn-capture" type="button" disabled>Tomar foto y clasificar</button>
+    <span class="camera-hint">Permite acceso a cámara para habilitar captura.</span>
   </div>
 </div>
-
-
-
-</body>
-</html>
 {% endblock %}
-
