@@ -18,6 +18,35 @@ const btnCapture = document.getElementById('btn-capture');
 const switchCameraBtn = document.getElementById('switch-camera');
 let currentFacingMode = 'environment';
 
+const profileMenuToggle = document.getElementById('profile-menu-toggle');
+const profileDropdown = document.getElementById('dropdownMenu');
+
+function closeProfileMenu() {
+  if (!profileDropdown || !profileMenuToggle) return;
+  profileDropdown.classList.remove('open');
+  profileMenuToggle.setAttribute('aria-expanded', 'false');
+}
+
+if (profileMenuToggle && profileDropdown) {
+  profileMenuToggle.addEventListener('click', () => {
+    const isOpen = profileDropdown.classList.toggle('open');
+    profileMenuToggle.setAttribute('aria-expanded', String(isOpen));
+  });
+
+  document.addEventListener('click', event => {
+    if (!profileDropdown.contains(event.target) && !profileMenuToggle.contains(event.target)) {
+      closeProfileMenu();
+    }
+  });
+
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && profileDropdown.classList.contains('open')) {
+      closeProfileMenu();
+      profileMenuToggle.focus();
+    }
+  });
+}
+
 if (dropZone && fileInput) {
   dropZone.addEventListener('dragover', e => {
     e.preventDefault();

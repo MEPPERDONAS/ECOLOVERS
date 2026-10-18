@@ -5,14 +5,47 @@
 {% block content %}
 <main class="container home-screen">
   <section class="home-welcome" aria-labelledby="welcome-title">
-    <div class="home-avatar header-img avatar-{{ stats.avatar_id }}" role="img" aria-label="Tu avatar"></div>
-    <div class="home-welcome-copy">
+    <div class="home-welcome-heading">
       <p class="home-eyebrow">Tu espacio ecológico</p>
-      <h1 id="welcome-title">Hola, <span>{{ user }}</span></h1>
-      <p>Pequeñas acciones pueden cambiar el mundo.</p>
     </div>
-    <!-- <a class="home-trivia-link" href="{{ url_for('trivia') }}">Jugar trivia <span aria-hidden="true">→</span></a> -->
+    <div class="home-welcome-main">
+      <div class="profile-menu home-profile-menu">
+        <button class="home-avatar header-img avatar-{{ stats.avatar_id }} home-profile-trigger"
+                id="profile-menu-toggle"
+                type="button"
+                aria-label="Abrir menú del perfil"
+                aria-expanded="false"
+                aria-controls="dropdownMenu"></button>
+        <nav id="dropdownMenu" class="dropdown-menu" aria-label="Menú del perfil">
+          <a href="/perfil">{% include 'icons/user.svg' %}Perfil</a>
+          <a href="/historial">{% include 'icons/settings.svg' %}Configuración</a>
+          <hr>
+          <a href="{{ url_for('logout') }}" class="logout">{% include 'icons/logout-2.svg' %}Cerrar sesión</a>
+        </nav>
+      </div>
+      <div class="home-welcome-copy">
+        <h1 id="welcome-title">Hola, <span>{{ user }}</span></h1>
+        <p>Pequeñas acciones pueden cambiar el mundo.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="home-streak-summary">
     <div class="home-streak-bar">
+      <div class="home-level">
+        <div class="home-level-label">
+          <span>Nivel 1: Explorador eco</span>
+          <span>30%</span>
+        </div>
+        <div class="home-level-track"
+             role="progressbar"
+             aria-label="Nivel 1: Explorador eco"
+             aria-valuemin="0"
+             aria-valuemax="100"
+             aria-valuenow="30">
+          <span class="home-level-progress" style="width: 30%"></span>
+        </div>
+      </div>
       <p class="home-streak-count"><strong>{{ stats.get('racha_actual', 0) }}</strong> días de racha <span aria-hidden="true">💚</span></p>
     </div>
   </section>

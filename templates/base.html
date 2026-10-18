@@ -9,41 +9,6 @@
 </head>
 
 <body>
-<header class="header">
-    <div class="header-img avatar-{{ stats.avatar_id }}"></div>
-    <div><strong>
-    {% set page_names = {
-        'index': 'Inicio',
-        'history': 'Historial',
-        'tips': 'Tips',
-        'places': 'Lugares',
-        'perfil': 'Perfil',
-        'guide': 'Guía',
-        'trivia': 'Trivia'
-    } %}
-    {{ page_names.get(request.endpoint, 'Inicio') }}</strong>
-</div>
-
-    <div>
-        <div class="profile-menu">
-            <div class="menu-icon" onclick="toggleMenu()">
-                {% include 'icons/menu-2.svg' %}
-            </div>
-
-            <div id="dropdownMenu" class="dropdown-menu">
-                <a href="/perfil">{% include 'icons/user.svg' %}
-                    Perfil</a>
-                <a href="/historial">{% include 'icons/settings.svg' %}
-                    Configuración</a>
-                <hr>
-                <a href="{{ url_for('logout') }}" class="logout">
-                    {% include 'icons/logout-2.svg' %}
-                    Cerrar sesión
-                </a>
-            </div>
-        </div>
-    </div>
-</header>
     {% block content %}{% endblock %}
 
     <nav class="floating-island" aria-label="Accesos rapidos">
@@ -73,20 +38,4 @@
     </footer>
 
 </body>
-
-<script>
-function toggleMenu() {
-    const menu = document.getElementById("dropdownMenu");
-    menu.style.display = menu.style.display === "flex" ? "none" : "flex";
-}
-
-window.addEventListener("click", function(e) {
-    const menu = document.getElementById("dropdownMenu");
-    const profile = document.querySelector(".menu-icon");
-
-    if (!profile.contains(e.target) && !menu.contains(e.target)) {
-        menu.style.display = "none";
-    }
-});
-</script>
 </html>
